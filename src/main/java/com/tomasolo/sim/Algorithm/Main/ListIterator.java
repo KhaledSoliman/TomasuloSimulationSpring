@@ -1,5 +1,5 @@
 
-package Main;
+package com.tomasolo.sim.Algorithm.Main;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

@@ -1,5 +1,8 @@
-package Instruction;
+package com.tomasolo.sim.Algorithm.Instruction;
 
+import lombok.Data;
+
+@Data
 public class Instruction {
     private String name, format;
     private int regA, regB, regC;

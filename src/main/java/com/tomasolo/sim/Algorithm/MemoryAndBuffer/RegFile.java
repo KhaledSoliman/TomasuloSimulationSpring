@@ -1,4 +1,4 @@
-package MemoryAndBuffer;
+package com.tomasolo.sim.Algorithm.MemoryAndBuffer;
 
 public class RegFile {
     private static int [] rf;

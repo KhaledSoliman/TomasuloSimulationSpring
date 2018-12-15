@@ -1,4 +1,4 @@
-package MemoryAndBuffer;
+package com.tomasolo.sim.Algorithm.MemoryAndBuffer;
 
 public class Memory {
     private final int CAPACITY = 65536;           // 2^16

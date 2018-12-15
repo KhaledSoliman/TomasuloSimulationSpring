@@ -1,5 +1,5 @@
 
-package Main;
+package com.tomasolo.sim.Algorithm.Main;
 
 /////Struct ////
 public class ROB_NODE {
