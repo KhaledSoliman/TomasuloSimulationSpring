@@ -52,7 +52,6 @@ public class Reservation_Station implements Iterable {
 		for (int i = 0; i < 2; i++)
 			MUL[i] = new Reservation_Station_Element();
 
-
 	}
 
 	public void add(Instruction inst, ROB rob, int rob_ind, int PC) {
@@ -952,14 +951,26 @@ public class Reservation_Station implements Iterable {
 	}
 
 	@Override
-	public Iterator iterator() {
+	public Iterator<Reservation_Station_Element> iterator() {
 		Iterator<Reservation_Station_Element> it;
 		String obj;
 		Scanner reader = new Scanner(System.in);  // Reading from System.in
 		Scanner in = new Scanner(System.in);
 		System.out.println("Enter Reservation Station Name");
 		obj = in.nextLine();
-		//String obj = "ADD_SUB_ADDI" ;
+
+		Reservation_Station_Element[] list =
+				new Reservation_Station_Element[15];
+
+		System.arraycopy(LW, 0, list, 0, LW.length);
+		System.arraycopy(SW, 0, list, LW.length, SW.length);
+		System.arraycopy(JMP_JALR_RET, 0, list, LW.length+ SW.length, JMP_JALR_RET.length);
+		System.arraycopy(BEQ, 0, list, LW.length+ SW.length + JMP_JALR_RET.length, BEQ.length);
+		System.arraycopy(ADD_SUB_ADDI, 0, list, LW.length+ SW.length + JMP_JALR_RET.length + BEQ.length, ADD_SUB_ADDI.length);
+		System.arraycopy(NAND, 0, list, LW.length+ SW.length + JMP_JALR_RET.length + BEQ.length + ADD_SUB_ADDI.length, NAND.length);
+		System.arraycopy(MUL, 0, list, LW.length+ SW.length + JMP_JALR_RET.length + BEQ.length + ADD_SUB_ADDI.length +NAND.length, MUL.length);
+		it = Arrays.asList(list).iterator();
+		/*
 		switch (obj) {
 			case "LW": {
 				it = Arrays.asList(LW).iterator();
@@ -995,6 +1006,7 @@ public class Reservation_Station implements Iterable {
 			}
 
 		}
+		*/
 		return it;
 	}
 

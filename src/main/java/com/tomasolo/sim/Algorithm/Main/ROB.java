@@ -7,10 +7,8 @@ import com.tomasolo.sim.Algorithm.MemoryAndBuffer.RegFile;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-public class ROB implements Iterable {
+public class ROB implements Iterable<ROB_NODE> {
 	static ROB_NODE first;    // beginning of queue
 	static ROB_NODE last;     // end of queue
 	static int n;  // number of elements on queue
@@ -241,7 +239,7 @@ public class ROB implements Iterable {
 
 	}
 
-	public Iterator iterator() {
+	public Iterator<ROB_NODE> iterator() {
 		return new ListIterator(first);
 	}
 }

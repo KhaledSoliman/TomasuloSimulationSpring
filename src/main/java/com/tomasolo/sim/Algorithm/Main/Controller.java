@@ -23,13 +23,13 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 	private Integer pcPredict;
 	private Instruction prevInstr;
 
-	public Controller() {
+	public Controller(ArrayList<Instruction> instrs) {
 		loadBuffer = new LoadBuffer(this);
 		memory = new Memory();
 		rob = new ROB();
 		rs = new Reservation_Station();
 
-		instrsList = Utils.fillArray();
+		instrsList = Utils.fillArray(instrs);
 		instrQueue = new InstructionQueue();
 		int pc = 0;
 		for (int i = 0; i < instrsList.size(); i++) {
@@ -75,6 +75,7 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 			Scanner in = new Scanner(System.in);
 			System.out.println("Would You Like to Run Cycle_by_Cycle? (1/0)");
 			obj = in.nextInt();
+			obj = 0;
 		}
 		Integer pcIn = null;
 
@@ -188,17 +189,17 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 
 		if (obj == 1) {
 			Iterator it = rob.iterator();
-			Iterator itRs = rs.iterator();
+			Iterator<Reservation_Station_Element> itRs = rs.iterator();
 			it.forEachRemaining(new Consumer() {
 				@Override
 				public void accept(Object t) {
 					System.out.println("ROB: " + t.toString());
 				}
 			});
-			itRs.forEachRemaining(new Consumer() {
+			itRs.forEachRemaining(new Consumer<Reservation_Station_Element>() {
 				@Override
-				public void accept(Object t) {
-					System.out.println("RS: " + t.toString());
+				public void accept(Reservation_Station_Element reservation_station_element) {
+
 				}
 			});
 			memory.print();

@@ -4,7 +4,7 @@ package com.tomasolo.sim.Algorithm.Main;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-class ListIterator implements Iterator {
+class ListIterator implements Iterator<ROB_NODE> {
         private ROB_NODE current;
 
         public ListIterator(ROB_NODE first) {
