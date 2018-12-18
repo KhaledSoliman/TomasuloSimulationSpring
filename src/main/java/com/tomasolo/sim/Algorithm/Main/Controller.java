@@ -71,12 +71,13 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 	// always @ posedge clk
 	@Override
 	public void didUpdate(int CC) {
-		if (obj == null) {
+		/*if (obj == null) {
 			Scanner in = new Scanner(System.in);
 			System.out.println("Would You Like to Run Cycle_by_Cycle? (1/0)");
 			obj = in.nextInt();
-			obj = 0;
 		}
+		*/
+		obj = 0;
 		Integer pcIn = null;
 
 		/*

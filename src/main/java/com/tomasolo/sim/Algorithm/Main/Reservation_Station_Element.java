@@ -2,7 +2,6 @@
 package com.tomasolo.sim.Algorithm.Main;
 
 
-
 public class Reservation_Station_Element {
 	String operation;
 	boolean busy;
@@ -14,7 +13,7 @@ public class Reservation_Station_Element {
 	Integer rob_indx;
 	Integer execution_start_cycle;
 
-	public Reservation_Station_Element() {
+	Reservation_Station_Element() {
 		PC = null;
 		execution_start_cycle = null;
 		operation = null;
@@ -28,7 +27,6 @@ public class Reservation_Station_Element {
 
 	public String toString() {
 		StringBuilder s = new StringBuilder();
-
 
 		s.append(operation);
 		s.append(' ');
@@ -52,12 +50,12 @@ public class Reservation_Station_Element {
 		String[] row = new String[8];
 		row[0] = Boolean.toString(busy);
 		row[1] = operation;
-		row[2] = Integer.toString(Vk);
-		row[3] = Integer.toString(Vj);
-		row[4] = Integer.toString(Qk);
-		row[5] = Integer.toString(Qj);
-		row[6] = Integer.toString(rob_indx);
-		row[7] = Integer.toString(execution_start_cycle);
+		row[2] = Vk != null ? Integer.toString(Vk) : "";
+		row[3] = Vj != null ? Integer.toString(Vj) : "";
+		row[4] = Qk != null ? Integer.toString(Qk) : "";
+		row[5] = Qj != null ? Integer.toString(Qj) : "";
+		row[6] = rob_indx != null ? Integer.toString(rob_indx) : "";
+		row[7] = execution_start_cycle != null ? Integer.toString(execution_start_cycle) : "";
 		return row;
 	}
 

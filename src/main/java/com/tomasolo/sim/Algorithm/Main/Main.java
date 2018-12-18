@@ -6,16 +6,12 @@ import com.tomasolo.sim.Algorithm.MemoryAndBuffer.LoadBuffer;
 import com.tomasolo.sim.Algorithm.MemoryAndBuffer.RegFile;
 import com.tomasolo.sim.InstructionPOJO;
 import com.tomasolo.sim.POJO;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.lang.reflect.Array;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 @RestController
 public class Main {
@@ -24,36 +20,38 @@ public class Main {
 	private static Controller controller;
 	private static boolean loadEx;
 	public static ClkLoadHandler clkH;
+	private static ArrayList<Response> response = new ArrayList<>();
 
 	@PostMapping("/")
 	@CrossOrigin(origins = "http://localhost:3000")
-	public static void main(@RequestBody POJO args) {
-		for (InstructionPOJO instr : args.getInstructions()) {
-			System.out.print(instr.getName());
-		}
+	@ResponseBody
+	public static ArrayList<Response> main(@RequestBody POJO args) throws InterruptedException {
 		clkH = new ClkLoadHandler();
 		controller = new Controller(convertToInstructions(args.getInstructions()));
 		clkInterface = (ClkInterface) controller;
-		updateCCEverySec();
+		 updateCCEverySec();
+
+		 Thread.sleep(2000);
+		 return response;
 	}
 
 
 	private static void updateCCEverySec() {
 		Timer timer = new Timer();
+		response.clear();
 		timer.scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
-				buildRes();
+				Main.response.add(buildRes());
 				if (controller.rob.isEmpty() && controller.instrQueue.isEmpty()) {
 					timer.cancel();
-					System.exit(0);
 				} else {
 					clkInterface.didUpdate(CC);
 					CC++;
 					RegFile.print();
 				}
 			}
-		}, 10, 10);
+		}, 10, 100);
 	}
 
 
@@ -70,17 +68,18 @@ public class Main {
 		}
 	}
 
-	private static String[] buildRes() {
+	private static Response buildRes() {
 
-		ArrayList<String> robResponse = new ArrayList<>();
-		Iterator iteratorROB = controller.rob.iterator();
-		iteratorROB.forEachRemaining(new Consumer() {
-			@Override
-			public void accept(Object o) {
-				robResponse.add(o.toString());
-			}
-		});
-
+		ArrayList<ROB_NODE> robResponse = controller.rob.asList();
+		/*
+			Iterator iteratorROB = controller.rob.iterator();
+			iteratorROB.forEachRemaining(new Consumer<ROB_NODE>() {
+				@Override
+				public void accept(Object o) {
+					robResponse.add(o.toString());
+				}
+			});
+		*/
 		ArrayList<String[]> rsResponse = new ArrayList<>();
 		Iterator<Reservation_Station_Element> iteratorRS = controller.rs.iterator();
 		iteratorRS.forEachRemaining(new Consumer<Reservation_Station_Element>() {
@@ -89,29 +88,25 @@ public class Main {
 				rsResponse.add(reservation_station_element.toArray());
 			}
 		});
-		String[] response = new String[rsResponse.size() + robResponse.size()];
-		System.arraycopy(rsResponse, 0, response, 0, rsResponse.size());
-		System.arraycopy(robResponse, 0, response, rsResponse.size(), robResponse.size());
 
-		return response;
+		return new Response(robResponse, rsResponse);
 	}
 
 	private static ArrayList<Instruction> convertToInstructions(InstructionPOJO[] pojos) {
 		ArrayList<Instruction> list = new ArrayList<>();
-		for (InstructionPOJO i: pojos) {
+		for (InstructionPOJO i : pojos) {
 			if (i.getName().equals(Instruction.ADD) || i.getName().equals(Instruction.SUB)
 					|| i.getName().equals(Instruction.MUL) || i.getName().equals(Instruction.NAND)) {
 				try {
 					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_ARITHMETIC,
 							Integer.parseInt(i.getOperands()[0]),
-                            Integer.parseInt(i.getOperands()[1]),
-                            Integer.parseInt(i.getOperands()[2]));
+							Integer.parseInt(i.getOperands()[1]),
+							Integer.parseInt(i.getOperands()[2]));
 					list.add(instruction);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}
-			else if(i.getName().equals(Instruction.ADDI)) {
+			} else if (i.getName().equals(Instruction.ADDI)) {
 				try {
 					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_ARITHMETIC_IMM,
 							Integer.parseInt(i.getOperands()[0]),
@@ -121,8 +116,7 @@ public class Main {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}
-			else if (i.getName().equals(Instruction.BEQ)) {
+			} else if (i.getName().equals(Instruction.BEQ)) {
 				try {
 					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_CONDITIONAL_BRANCH,
 							Integer.parseInt(i.getOperands()[0]),
@@ -132,8 +126,7 @@ public class Main {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}
-			else if (i.getName().equals(Instruction.JALR)) {
+			} else if (i.getName().equals(Instruction.JALR)) {
 				try {
 					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_JALR,
 							Integer.parseInt(i.getOperands()[0]),
@@ -142,8 +135,7 @@ public class Main {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}
-			else if (i.getName().equals(Instruction.JMP)) {
+			} else if (i.getName().equals(Instruction.JMP)) {
 				try {
 					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_UNCONDITIONAL_BRANCH,
 							Integer.parseInt(i.getOperands()[0]));
@@ -151,8 +143,7 @@ public class Main {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}
-			else if (i.getName().equals(Instruction.RET)) {
+			} else if (i.getName().equals(Instruction.RET)) {
 				try {
 					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_RET,
 							Integer.parseInt(i.getOperands()[0]));
@@ -160,8 +151,7 @@ public class Main {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}
-			else if (i.getName().equals(Instruction.LW) || i.getName().equals(Instruction.SW)) {
+			} else if (i.getName().equals(Instruction.LW) || i.getName().equals(Instruction.SW)) {
 				try {
 					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_LW_SW,
 							Integer.parseInt(i.getOperands()[0]),

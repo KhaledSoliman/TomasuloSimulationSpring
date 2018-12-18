@@ -58,7 +58,6 @@ public class Reservation_Station implements Iterable {
 		int y;
 		switch (inst.getName()) {
 			case Instruction.LW: {
-
 				y = empty_index(LW);
 				LW[y].operation = inst.getName();
 				LW[y].busy = true;
@@ -826,10 +825,9 @@ public class Reservation_Station implements Iterable {
 		Integer result = null;
 		if (rtrn.operation == Instruction.ADD || rtrn.operation == Instruction.ADDI) {
 			result = rtrn.Vj + rtrn.Vk;
-
 		} else if (rtrn.operation == Instruction.SUB) {
 			result = rtrn.Vj - rtrn.Vk;
-		} else if (rtrn.operation == Instruction.MUL) {
+		} else if (rtrn.operation.equals(Instruction.MUL)) {
 			result = rtrn.Vj * rtrn.Vk;
 		} else if (rtrn.operation == Instruction.NAND) {
 			result = ~(rtrn.Vj & rtrn.Vk);
@@ -956,19 +954,19 @@ public class Reservation_Station implements Iterable {
 		String obj;
 		Scanner reader = new Scanner(System.in);  // Reading from System.in
 		Scanner in = new Scanner(System.in);
-		System.out.println("Enter Reservation Station Name");
-		obj = in.nextLine();
+		//System.out.println("Enter Reservation Station Name");
+		//obj = in.nextLine();
 
 		Reservation_Station_Element[] list =
 				new Reservation_Station_Element[15];
 
 		System.arraycopy(LW, 0, list, 0, LW.length);
 		System.arraycopy(SW, 0, list, LW.length, SW.length);
-		System.arraycopy(JMP_JALR_RET, 0, list, LW.length+ SW.length, JMP_JALR_RET.length);
-		System.arraycopy(BEQ, 0, list, LW.length+ SW.length + JMP_JALR_RET.length, BEQ.length);
-		System.arraycopy(ADD_SUB_ADDI, 0, list, LW.length+ SW.length + JMP_JALR_RET.length + BEQ.length, ADD_SUB_ADDI.length);
-		System.arraycopy(NAND, 0, list, LW.length+ SW.length + JMP_JALR_RET.length + BEQ.length + ADD_SUB_ADDI.length, NAND.length);
-		System.arraycopy(MUL, 0, list, LW.length+ SW.length + JMP_JALR_RET.length + BEQ.length + ADD_SUB_ADDI.length +NAND.length, MUL.length);
+		System.arraycopy(JMP_JALR_RET, 0, list, LW.length + SW.length, JMP_JALR_RET.length);
+		System.arraycopy(BEQ, 0, list, LW.length + SW.length + JMP_JALR_RET.length, BEQ.length);
+		System.arraycopy(ADD_SUB_ADDI, 0, list, LW.length + SW.length + JMP_JALR_RET.length + BEQ.length, ADD_SUB_ADDI.length);
+		System.arraycopy(NAND, 0, list, LW.length + SW.length + JMP_JALR_RET.length + BEQ.length + ADD_SUB_ADDI.length, NAND.length);
+		System.arraycopy(MUL, 0, list, LW.length + SW.length + JMP_JALR_RET.length + BEQ.length + ADD_SUB_ADDI.length + NAND.length, MUL.length);
 		it = Arrays.asList(list).iterator();
 		/*
 		switch (obj) {

@@ -5,6 +5,8 @@ import com.tomasolo.sim.Algorithm.Instruction.Instruction;
 import com.tomasolo.sim.Algorithm.MemoryAndBuffer.Memory;
 import com.tomasolo.sim.Algorithm.MemoryAndBuffer.RegFile;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -239,7 +241,25 @@ public class ROB implements Iterable<ROB_NODE> {
 
 	}
 
+	public ArrayList<ROB_NODE> asList() {
+		ArrayList<ROB_NODE> list = new ArrayList<>();
+		ROB_NODE cur = first;
+		while (cur != null && cur.next != null) {
+			list.add(cur);
+			cur = cur.next;
+		}
+		return list;
+	}
+
 	public Iterator<ROB_NODE> iterator() {
 		return new ListIterator(first);
+		/*
+		ِArrayList<ROB_NODE> list;
+		ROB_NODE cur = first;
+		while(cur.next != null) {
+			list.add(cur);
+			cur = cur.next;
+		}
+		return list;*/
 	}
 }
