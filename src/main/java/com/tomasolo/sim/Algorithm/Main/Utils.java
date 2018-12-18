@@ -17,17 +17,6 @@ public class Utils {
 		return list;
 	}
 
-	public static void DeQueueAll(InstructionQueue instrQueue, boolean consoleLog) {
-		if (consoleLog) {
-			for (int i = 0; i < instrQueue.getSize(); i++) {
-				System.out.println(instrQueue.dequeue());
-			}
-		} else {
-			for (int i = 0; i < instrQueue.getSize(); i++) {
-				instrQueue.dequeue();
-			}
-		}
-	}
 
 	public static int getIndexByPc(int pc, ArrayList<Instruction> list) {
 		for (int i = 0; i < list.size(); i++) {
