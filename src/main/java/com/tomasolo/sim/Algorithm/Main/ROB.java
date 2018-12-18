@@ -11,10 +11,10 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class ROB implements Iterable<ROB_NODE> {
-	static ROB_NODE first;    // beginning of queue
-	static ROB_NODE last;     // end of queue
-	static int n;  // number of elements on queue
-	static int last_index = -1;
+	private static ROB_NODE first;    // beginning of queue
+	private static ROB_NODE last;     // end of queue
+	private static int n;  // number of elements on queue
+	private static int last_index = -1;
 
 
 	/**
@@ -45,10 +45,7 @@ public class ROB implements Iterable<ROB_NODE> {
 	}
 
 	public boolean check() {
-		if (n <= 6)
-			return true;
-		else
-			return false;
+		return n <= 6;
 	}
 
 	/**
@@ -66,7 +63,7 @@ public class ROB implements Iterable<ROB_NODE> {
 	 * Adds the item to this queue.
 	 */
 	public int enqueue(Instruction inst) {
-		if (inst.getName() == Instruction.JMP || inst.getName() == Instruction.BEQ || inst.getName() == Instruction.RET) {
+		if (inst.getName().equals(Instruction.JMP) || inst.getName().equals(Instruction.BEQ) || inst.getName().equals(Instruction.RET)) {
 			ROB_NODE oldlast = last;
 			last = new ROB_NODE();
 			last.dest = 100;
@@ -77,7 +74,7 @@ public class ROB implements Iterable<ROB_NODE> {
 			else oldlast.next = last;
 			n++; //increment size
 			return last_index;
-		} else if (inst.getName() == Instruction.JALR) {
+		} else if (inst.getName().equals(Instruction.JALR)) {
 			ROB_NODE oldlast = last;
 			last = new ROB_NODE();
 			last.dest = inst.getRegA();
@@ -88,7 +85,7 @@ public class ROB implements Iterable<ROB_NODE> {
 			else oldlast.next = last;
 			n++; //increment size
 			return last_index;
-		} else if (inst.getName() == Instruction.SW) {
+		} else if (inst.getName().equals(Instruction.SW)) {
 			ROB_NODE oldlast = last;
 			last = new ROB_NODE();
 			last.dest = 101;
@@ -172,7 +169,7 @@ public class ROB implements Iterable<ROB_NODE> {
 		ROB_NODE current = first;
 		while (current != null) {
 			if (current.index == indx) {
-				if (current.type == Instruction.JALR || current.type == Instruction.SW)
+				if (current.type.equals(Instruction.JALR) || current.type.equals(Instruction.SW))
 					current.jalr_value2 = jalrvalue;
 
 
@@ -208,17 +205,17 @@ public class ROB implements Iterable<ROB_NODE> {
 	public Integer commit(Memory mem) {
 		Integer PC = null;
 		if (first.ready) {
-			if (first.type == Instruction.JMP || first.type == Instruction.RET)
+			if (first.type.equals(Instruction.JMP) || first.type.equals(Instruction.RET))
 				PC = first.value;
-			else if (first.type == Instruction.BEQ) {
+			else if (first.type.equals(Instruction.BEQ)) {
 				if (first.value != null) {
 					PC = first.value;
 				}
 
-			} else if (first.type == Instruction.JALR) {
+			} else if (first.type.equals(Instruction.JALR)) {
 				PC = first.jalr_value2;
 				RegFile.write(first.dest, first.value);
-			} else if (first.type == Instruction.SW) {
+			} else if (first.type.equals(Instruction.SW)) {
 				try {
 					mem.write(first.jalr_value2, first.value);
 				} catch (Exception ex) {

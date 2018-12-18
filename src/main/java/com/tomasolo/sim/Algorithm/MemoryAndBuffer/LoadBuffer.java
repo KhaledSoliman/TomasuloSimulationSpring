@@ -53,7 +53,7 @@ public class LoadBuffer {
 			// Starting Computing Address:
 			// A = Imm
 
-			buffer[index] = (int) instr.getImm();
+			buffer[index] = instr.getImm();
 			System.out.println("CC: " + Main.CC + " Load Buffer: entry #" + index + ", Address: " + buffer[index]);
 
 			// CC 2: A = Imm + Regs[Rs2]

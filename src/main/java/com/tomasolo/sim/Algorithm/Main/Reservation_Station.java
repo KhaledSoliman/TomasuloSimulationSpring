@@ -11,21 +11,21 @@ import java.util.Scanner;
 
 
 public class Reservation_Station implements Iterable {
-	Reservation_Station_Element[] LW;
-	int LW_counter = 0;
-	Reservation_Station_Element[] SW;
-	int SW_counter = 0;
-	Reservation_Station_Element[] JMP_JALR_RET;
-	int JMP_JALR_RET_counter = 0;
-	Reservation_Station_Element[] BEQ;
-	int[] branch_imm = new int[2];
-	int BEQ_counter = 0;
-	Reservation_Station_Element[] ADD_SUB_ADDI;
-	int ADD_SUB_ADDI_counter = 0;
-	Reservation_Station_Element[] NAND;
-	int NAND_counter = 0;
-	Reservation_Station_Element[] MUL;
-	int MUL_counter = 0;
+	private Reservation_Station_Element [] LW ;
+	private int LW_counter =0 ;
+	private Reservation_Station_Element [] SW ;
+	private int SW_counter =0 ;
+	private Reservation_Station_Element [] JMP_JALR_RET ;
+	private int JMP_JALR_RET_counter =0 ;
+	private Reservation_Station_Element [] BEQ  ;
+	private int []branch_imm  = new int [2];
+	private int BEQ_counter =0 ;
+	private Reservation_Station_Element []ADD_SUB_ADDI ;
+	private int ADD_SUB_ADDI_counter =0 ;
+	private Reservation_Station_Element [] NAND;
+	private int NAND_counter =0 ;
+	private Reservation_Station_Element [] MUL ;
+	private int MUL_counter =0 ;
 
 	public static String[] formats = {"LW", "SW", "JMP_JALR_RET", "BEQ", "ADD_SUB_ADDI", "NAND", "MUL"};
 
@@ -186,7 +186,7 @@ public class Reservation_Station implements Iterable {
 				BEQ[y].operation = inst.getName();
 				BEQ[y].busy = true;
 				BEQ[y].PC = PC;
-				branch_imm[y] = (int) inst.getImm();
+				branch_imm[y] = inst.getImm();
 				BEQ[y].rob_indx = rob_ind;
 
 				int rob_indx;
@@ -494,176 +494,167 @@ public class Reservation_Station implements Iterable {
 		}
 	}
 
-	public void remove(String type, ROB rob, int CC, Integer PC, Integer PC2) {
+	public void remove (String type, ROB rob , int CC , Integer PC , Integer PC2)
+	{
 
 		int k = get_ready(type); //retrieves an inst with ready operands !!
-		if (k != -1) {
-			switch (type) {
-				case "LW": {
-					if (LW[k].PC != PC && LW[k].PC != PC2 || (PC == null && PC2 == null)) {
+		if (k != -1 )
+		{
+			switch (type)
+			{
+				case "LW" :
+				{
+					if (!LW[k].PC.equals(PC) && !LW[k].PC.equals(PC2) || (PC==null && PC2==null))
+					{
 						System.out.println("a " + LW[k].operation + " is executing  ");
 						LW[k].execution_start_cycle = CC;
 					}
 
 
 				}
-				break;
-				case "SW": {
-					if (SW[k].PC != PC && SW[k].PC != PC2 || (PC == null && PC2 == null)) {
+				break ;
+				case "SW" :
+				{
+					if (!SW[k].PC.equals(PC) && !SW[k].PC.equals(PC2) || (PC==null && PC2==null))
+					{
 						System.out.println("a " + SW[k].operation + " is executing  ");
 						SW[k].execution_start_cycle = CC; //stores the cycle it started execution in
 					}
 
 
 				}
-				break;
-				case "JMP_JALR_RET": {
-					if (JMP_JALR_RET[k].PC != PC && JMP_JALR_RET[k].PC != PC2 || (PC == null && PC2 == null)) {
+				break ;
+				case "JMP_JALR_RET" :
+				{
+					if (!JMP_JALR_RET[k].PC.equals(PC) && !JMP_JALR_RET[k].PC.equals(PC2) || (PC==null && PC2==null))
+					{
 						System.out.println("a " + JMP_JALR_RET[k].operation + " is executing  ");
 						JMP_JALR_RET[k].execution_start_cycle = CC;
 					}
 
 				}
-				break;
-				case "BEQ": {
-					if (BEQ[k].PC != PC && BEQ[k].PC != PC2 || (PC == null && PC2 == null)) {
+				break ;
+				case "BEQ" :
+				{
+					if (!BEQ[k].PC.equals(PC) && !BEQ[k].PC.equals(PC2) || (PC==null && PC2==null))
+					{
 						System.out.println("a " + BEQ[k].operation + " is executing  ");
 						BEQ[k].execution_start_cycle = CC;
 					}
 
 
+
 				}
-				break;
-				case "ADD_SUB_ADDI": {
-					if (ADD_SUB_ADDI[k].PC != PC && ADD_SUB_ADDI[k].PC != PC2 || (PC == null && PC2 == null)) {
+				break ;
+				case "ADD_SUB_ADDI" :
+				{
+					if (!ADD_SUB_ADDI[k].PC.equals(PC) && !ADD_SUB_ADDI[k].PC.equals(PC2) || (PC==null && PC2==null))
+					{
 						ADD_SUB_ADDI[k].execution_start_cycle = CC;
 						System.out.println("a " + ADD_SUB_ADDI[k].operation + " is executing  ");
 					}
 
 
+
 				}
-				break;
-				case "NAND": {
-					if (NAND[k].PC != PC && NAND[k].PC != PC2 || (PC == null && PC2 == null)) {
-						NAND[k].execution_start_cycle = CC;
+				break ;
+				case "NAND" :
+				{
+					if (!NAND[k].PC.equals(PC) && !NAND[k].PC.equals(PC2) || (PC==null && PC2==null))
+					{
+						NAND[k].execution_start_cycle = CC ;
 						System.out.println("a " + NAND[k].operation + " is executing  ");
 					}
 				}
-				break;
-				case "MUL": {
-					if (MUL[k].PC != PC && MUL[k].PC != PC2 || (PC == null && PC2 == null)) {
-						MUL[k].execution_start_cycle = CC;
+				break ;
+				case "MUL" :
+				{
+					if (!MUL[k].PC.equals(PC) && !MUL[k].PC.equals(PC2) || (PC==null && PC2==null))
+					{
+						MUL[k].execution_start_cycle = CC ;
 						System.out.println("a " + MUL[k].operation + " is executing  ");
 					}
 
-					break;
+					break ;
 
 				}
 			}
-		} else {
-			System.out.println("No Ready " + type + " Instructions !!");
+		}
+		else
+		{
+			System.out.println ("No Ready " +type + " Instructions !!");
 		}
 
 	}
 
 
+
 	private int empty_index(Reservation_Station_Element[] arr) {
 		for (int i = 0; i < arr.length; i++) {
 
-			if (arr[i].busy == false)
+			if (!arr[i].busy)
 				return i;
 		}
 
 		return -1;
 	}
 
-	public boolean check(Instruction instr) {
-		int y;
-		switch (instr.getName()) {
-			case Instruction.ADD: {
-				y = empty_index(ADD_SUB_ADDI);
-				if (y == -1)
-					return false;
-				else
-					return true;
+	public boolean check (Instruction instr)
+	{
+		int y ;
+		switch (instr.getName())
+		{
+			case Instruction.ADD  :
+			{ y = empty_index (ADD_SUB_ADDI);
+				return y != -1;
 			}
-			case Instruction.SUB: {
-				y = empty_index(ADD_SUB_ADDI);
-				if (y == -1)
-					return false;
-				else
-					return true;
+			case Instruction.SUB :
+			{ y = empty_index (ADD_SUB_ADDI);
+				return y != -1;
 			}
 
-			case Instruction.ADDI: {
-				y = empty_index(ADD_SUB_ADDI);
-				if (y == -1)
-					return false;
-				else
-					return true;
+			case Instruction.ADDI :
+			{ y = empty_index (ADD_SUB_ADDI);
+				return y != -1;
 			}
-			case Instruction.BEQ: {
-				y = empty_index(BEQ);
-				if (y == -1)
-					return false;
-				else
-					return true;
+			case Instruction.BEQ :
+			{ y = empty_index (BEQ);
+				return y != -1;
 			}
-			case Instruction.NAND: {
-				y = empty_index(NAND);
-				if (y == -1)
-					return false;
-				else
-					return true;
+			case Instruction.NAND :
+			{ y = empty_index (NAND);
+				return y != -1;
 			}
-			case Instruction.MUL: {
-				y = empty_index(MUL);
-				if (y == -1)
-					return false;
-				else
-					return true;
+			case Instruction.MUL :
+			{ y = empty_index (MUL);
+				return y != -1;
 			}
-			case Instruction.JMP: {
-				y = empty_index(JMP_JALR_RET);
-				if (y == -1)
-					return false;
-				else
-					return true;
+			case Instruction.JMP :
+			{ y = empty_index (JMP_JALR_RET);
+				return y != -1;
 			}
 
-			case Instruction.JALR: {
-				y = empty_index(JMP_JALR_RET);
-				if (y == -1)
-					return false;
-				else
-					return true;
+			case Instruction.JALR :
+			{ y = empty_index (JMP_JALR_RET);
+				return y != -1;
 			}
 
-			case Instruction.RET: {
-				y = empty_index(JMP_JALR_RET);
-				if (y == -1)
-					return false;
-				else
-					return true;
+			case Instruction.RET :
+			{ y = empty_index (JMP_JALR_RET);
+				return y != -1;
 			}
 
-			case Instruction.LW: {
-				y = empty_index(LW);
-				if (y == -1)
-					return false;
-				else
-					return true;
+			case Instruction.LW :
+			{ y = empty_index (LW);
+				return y != -1;
 			}
 
-			case Instruction.SW: {
-				y = empty_index(SW);
-				if (y == -1)
-					return false;
-				else
-					return true;
+			case Instruction.SW :
+			{ y = empty_index (SW);
+				return y != -1;
 			}
-			default:
-				return false;
+			default :
+				return false ;
 		}
 
 	}
@@ -705,14 +696,14 @@ public class Reservation_Station implements Iterable {
 		for (int i = 0; i < 3; i++)
 			if (JMP_JALR_RET[i].execution_start_cycle != null) {
 				if (CC - JMP_JALR_RET[i].execution_start_cycle >= 1) {
-					if (JMP_JALR_RET[i].operation == Instruction.JMP) {
+					if (JMP_JALR_RET[i].operation.equals(Instruction.JMP)) {
 						result = JMP_JALR_RET[i].PC + JMP_JALR_RET[i].Vj;
 						rob.set_value(JMP_JALR_RET[i].rob_indx, result, null); //write pc+imm to rob with dest pc
-					} else if (JMP_JALR_RET[i].operation == Instruction.JALR) {
+					} else if (JMP_JALR_RET[i].operation.equals(Instruction.JALR)) {
 						result = JMP_JALR_RET[i].PC + 1;
 						rob.set_value(JMP_JALR_RET[i].rob_indx, result, JMP_JALR_RET[i].Vj); //write pc+imm to rob with dest pc
 						update(NAND[i].rob_indx, result); //update reservation station
-					} else if (JMP_JALR_RET[i].operation == Instruction.RET) {
+					} else if (JMP_JALR_RET[i].operation.equals(Instruction.RET)) {
 						result = JMP_JALR_RET[i].Vj;
 						rob.set_value(JMP_JALR_RET[i].rob_indx, result, null); //write pc+imm to rob with dest pc
 					}
@@ -823,15 +814,15 @@ public class Reservation_Station implements Iterable {
 
 	private Integer execute(Reservation_Station_Element rtrn) {
 		Integer result = null;
-		if (rtrn.operation == Instruction.ADD || rtrn.operation == Instruction.ADDI) {
+		if (rtrn.operation.equals(Instruction.ADD) || rtrn.operation.equals(Instruction.ADDI)) {
 			result = rtrn.Vj + rtrn.Vk;
-		} else if (rtrn.operation == Instruction.SUB) {
+		} else if (rtrn.operation.equals(Instruction.SUB)) {
 			result = rtrn.Vj - rtrn.Vk;
 		} else if (rtrn.operation.equals(Instruction.MUL)) {
 			result = rtrn.Vj * rtrn.Vk;
-		} else if (rtrn.operation == Instruction.NAND) {
+		} else if (rtrn.operation.equals(Instruction.NAND)) {
 			result = ~(rtrn.Vj & rtrn.Vk);
-		} else if (rtrn.operation == Instruction.BEQ) {
+		} else if (rtrn.operation.equals(Instruction.BEQ)) {
 			result = rtrn.Vj - rtrn.Vk;
 		}
 
@@ -844,46 +835,46 @@ public class Reservation_Station implements Iterable {
 		switch (type) {
 			case "LW": {
 				for (int i = 0; i < LW.length; i++)
-					if (LW[i].operation != null && LW[i].busy == true && LW[i].execution_start_cycle == null) //always ready
+					if (LW[i].operation != null && LW[i].busy && LW[i].execution_start_cycle == null) //always ready
 						return i;
 				return -1;
 			}
 
 			case "SW": {
 				for (int i = 0; i < LW.length; i++)
-					if (SW[i].operation != null && SW[i].busy == true && SW[i].execution_start_cycle == null) //always ready
+					if (SW[i].operation != null && SW[i].busy && SW[i].execution_start_cycle == null) //always ready
 						return i;
 				return -1;
 			}
 
 			case "JMP_JALR_RET": {
 				for (int i = 0; i < JMP_JALR_RET.length; i++)
-					if (JMP_JALR_RET[i].operation != null && JMP_JALR_RET[i].busy == true && JMP_JALR_RET[i].Vj != null && JMP_JALR_RET[i].execution_start_cycle == null)
+					if (JMP_JALR_RET[i].operation != null && JMP_JALR_RET[i].busy && JMP_JALR_RET[i].Vj != null && JMP_JALR_RET[i].execution_start_cycle == null)
 						return i;
 				return -1;
 			}
 
 			case "BEQ": {
 				for (int i = 0; i < BEQ.length; i++)
-					if (BEQ[i].operation != null && BEQ[i].Vj != null && BEQ[i].Vk != null && BEQ[i].busy == true && BEQ[i].execution_start_cycle == null)
+					if (BEQ[i].operation != null && BEQ[i].Vj != null && BEQ[i].Vk != null && BEQ[i].busy && BEQ[i].execution_start_cycle == null)
 						return i;
 				return -1;
 			}
 			case "ADD_SUB_ADDI": {
 				for (int i = 0; i < JMP_JALR_RET.length; i++)
-					if (ADD_SUB_ADDI[i].operation != null && ADD_SUB_ADDI[i].Vj != null && ADD_SUB_ADDI[i].Vk != null && ADD_SUB_ADDI[i].busy == true && ADD_SUB_ADDI[i].execution_start_cycle == null)
+					if (ADD_SUB_ADDI[i].operation != null && ADD_SUB_ADDI[i].Vj != null && ADD_SUB_ADDI[i].Vk != null && ADD_SUB_ADDI[i].busy && ADD_SUB_ADDI[i].execution_start_cycle == null)
 						return i;
 				return -1;
 			}
 			case "NAND": {
 				for (int i = 0; i < NAND.length; i++)
-					if (NAND[i].operation != null && NAND[i].Vj != null && NAND[i].Vk != null && NAND[i].busy == true && NAND[i].execution_start_cycle == null)
+					if (NAND[i].operation != null && NAND[i].Vj != null && NAND[i].Vk != null && NAND[i].busy && NAND[i].execution_start_cycle == null)
 						return i;
 				return -1;
 			}
 			case "MUL": {
 				for (int i = 0; i < MUL.length; i++)
-					if (MUL[i].operation != null && MUL[i].Vj != null && MUL[i].Vk != null && MUL[i].busy == true && MUL[i].execution_start_cycle == null)
+					if (MUL[i].operation != null && MUL[i].Vj != null && MUL[i].Vk != null && MUL[i].busy && MUL[i].execution_start_cycle == null)
 						return i;
 				return -1;
 			}
@@ -898,51 +889,72 @@ public class Reservation_Station implements Iterable {
 				BEQ_counter + ADD_SUB_ADDI_counter + NAND_counter + MUL_counter);
 	}
 
-	void update(Integer rob_indx, int result) {
+	public int getNumBranchInstrs() {
+		return BEQ_counter;
+	}
 
-		for (int i = 0; i < BEQ.length; i++) {
-			if (BEQ[i].Qj == rob_indx) {
-				BEQ[i].Vj = result;
+	void update (Integer rob_indx  , int result )
+	{
+
+		for (int i=0 ;i<BEQ.length ; i++)
+		{
+			if (BEQ[i].Qj != null && BEQ[i].Qj.equals(rob_indx))
+			{
+				BEQ[i].Vj = result ;
 			}
-			if (BEQ[i].Qk == rob_indx) {
-				BEQ[i].Vk = result;
+			if (BEQ[i].Qk != null && BEQ[i].Qk.equals(rob_indx))
+			{
+				BEQ[i].Vk= result ;
 			}
 		}
 
-		for (int i = 0; i < JMP_JALR_RET.length; i++) {
-			if (JMP_JALR_RET[i].Qj == rob_indx) {
-				JMP_JALR_RET[i].Vj = result;
+		for (int i=0 ;i<JMP_JALR_RET.length ; i++)
+		{
+			if (JMP_JALR_RET[i].Qj != null && JMP_JALR_RET[i].Qj.equals(rob_indx))
+			{
+				JMP_JALR_RET[i].Vj = result ;
 			}
-			if (JMP_JALR_RET[i].Qk == rob_indx) {
-				JMP_JALR_RET[i].Vk = result;
+			if (JMP_JALR_RET[i].Qk != null && JMP_JALR_RET[i].Qk.equals(rob_indx))
+			{
+				JMP_JALR_RET[i].Vk= result ;
 			}
 		}
 
 
-		for (int i = 0; i < ADD_SUB_ADDI.length; i++) {
-			if (ADD_SUB_ADDI[i].Qj == rob_indx) {
-				ADD_SUB_ADDI[i].Vj = result;
+
+		for (int i=0 ;i<ADD_SUB_ADDI.length ; i++)
+		{
+			if (ADD_SUB_ADDI[i].Qj != null && ADD_SUB_ADDI[i].Qj.equals(rob_indx))
+			{
+				ADD_SUB_ADDI[i].Vj = result ;
 				System.out.print("Updating Result!!!!!!");
 			}
-			if (ADD_SUB_ADDI[i].Qk == rob_indx) {
-				ADD_SUB_ADDI[i].Vk = result;
+			if (ADD_SUB_ADDI[i].Qk != null && ADD_SUB_ADDI[i].Qk.equals(rob_indx))
+			{
+				ADD_SUB_ADDI[i].Vk= result ;
 			}
 		}
 
-		for (int i = 0; i < NAND.length; i++) {
-			if (NAND[i].Qj == rob_indx) {
-				NAND[i].Vj = result;
+		for (int i=0 ;i<NAND.length ; i++)
+		{
+			if (NAND[i].Qj != null && NAND[i].Qj.equals(rob_indx))
+			{
+				NAND[i].Vj = result ;
 			}
-			if (NAND[i].Qk == rob_indx) {
-				NAND[i].Vk = result;
+			if (NAND[i].Qk != null && NAND[i].Qk.equals(rob_indx))
+			{
+				NAND[i].Vk= result ;
 			}
 		}
-		for (int i = 0; i < MUL.length; i++) {
-			if (MUL[i].Qj == rob_indx) {
-				MUL[i].Vj = result;
+		for (int i=0 ;i<MUL.length ; i++)
+		{
+			if (MUL[i].Qj != null && MUL[i].Qj.equals(rob_indx))
+			{
+				MUL[i].Vj = result ;
 			}
-			if (MUL[i].Qk == rob_indx) {
-				MUL[i].Vk = result;
+			if (MUL[i].Qk != null && MUL[i].Qk.equals(rob_indx))
+			{
+				MUL[i].Vk= result ;
 			}
 		}
 

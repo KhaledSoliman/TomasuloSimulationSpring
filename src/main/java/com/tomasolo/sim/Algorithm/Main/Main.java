@@ -18,7 +18,6 @@ public class Main {
 	public static int CC = 1;
 	private static ClkInterface clkInterface;
 	private static Controller controller;
-	private static boolean loadEx;
 	public static ClkLoadHandler clkH;
 	private static ArrayList<Response> response = new ArrayList<>();
 
@@ -29,7 +28,7 @@ public class Main {
 		clkH = new ClkLoadHandler();
 		controller = new Controller(convertToInstructions(args.getInstructions()));
 		clkInterface = (ClkInterface) controller;
-		 updateCCEverySec();
+		updateCCEverySec();
 
 		 Thread.sleep(2000);
 		 return response;
@@ -45,6 +44,14 @@ public class Main {
 				Main.response.add(buildRes());
 				if (controller.rob.isEmpty() && controller.instrQueue.isEmpty()) {
 					timer.cancel();
+					double ipc = (float) controller.rs.getNumExecutedInstructions() / CC;
+					if(controller.rs.getNumBranchInstrs() != 0) {
+						float mispredictionRate = (float) (controller.mispredictionNum / controller.rs.getNumBranchInstrs()) * 100;
+						System.out.println("IPC = " + ipc + " \nMisprediction Rate = " + mispredictionRate);
+					}
+					else {
+						System.out.println("IPC = " + ipc + " \nMisprediction Rate = No Branch Instructions were executed");
+					}
 				} else {
 					clkInterface.didUpdate(CC);
 					CC++;
@@ -63,7 +70,6 @@ public class Main {
 		@Override
 		public void nextCycle(boolean loadEx) {
 			Main.CC++;
-			Main.loadEx = loadEx;
 			clkInterface.didUpdate(Main.CC);
 		}
 	}
