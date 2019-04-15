@@ -8,10 +8,20 @@ import java.util.ArrayList;
 public class Response {
 	ArrayList<ROB_NODE> robResponse;
 	ArrayList<String[]> rsResponses;
+	int[] rf;
 
-	public Response(ArrayList<ROB_NODE> robResponse, ArrayList<String[]> rsResponses) {
+	public Response(ArrayList<ROB_NODE> robResponse, ArrayList<String[]> rsResponses, int[] rf) {
 		this.robResponse = robResponse;
 		this.rsResponses = rsResponses;
+		this.rf = rf;
+	}
+
+	public int[] getRf() {
+		return rf;
+	}
+
+	public void setRf(int[] rf) {
+		this.rf = rf;
 	}
 
 	public ArrayList<ROB_NODE> getRobResponse() {

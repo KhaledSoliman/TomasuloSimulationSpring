@@ -13,9 +13,10 @@ public class RegFile {
         rf[3]=3 ;
         rf[1]=1 ;
     }
-            
-        
-    
+
+    public static int[] getRf() {
+        return rf;
+    }
 
     public static boolean write(int regNum, int data  ) {
         if(regNum == 0 || regNum > CAPACITY || data > 65535) // maximum number 16 bits

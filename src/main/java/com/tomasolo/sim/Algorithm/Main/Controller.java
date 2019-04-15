@@ -12,15 +12,15 @@ import java.util.function.Consumer;
 
 public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface {
 	private ArrayList<Instruction> instrsList;
-	public InstructionQueue instrQueue;
+	InstructionQueue instrQueue;
 	private LoadBuffer loadBuffer;
 	private Memory memory;
-	public ROB rob;
-	public Reservation_Station rs;
+	ROB rob;
+	Reservation_Station rs;
 	private Integer obj = null;
 	private Integer pcPredict;
 	private Instruction prevInstr;
-	public int mispredictionNum;
+	int mispredictionNum;
 	public static int awaitingInstrIndex;
 
 	public Controller(ArrayList<Instruction> instrs) {
@@ -115,7 +115,8 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 					//System.out.println("check " + instr1.getName());
 					if (instr1.getName().equals(Instruction.LW) || instr1.getName().equals(Instruction.SW)) {
 						if (instr1.getName().equals(Instruction.LW) && loadBuffer.loadIsFree()) {
-							deqIns[i] = instrQueue.dequeue(instrsList, awaitingInstrIndex);;
+							deqIns[i] = instrQueue.dequeue(instrsList, awaitingInstrIndex);
+							;
 
 							if (instrQueue.peek() != null && instrQueue.peek().getName().equals(Instruction.BEQ))
 								prevInstr = deqIns[i];

@@ -5,34 +5,37 @@ package com.tomasolo.sim.Algorithm.Main;
 import com.tomasolo.sim.Algorithm.Instruction.Instruction;
 import com.tomasolo.sim.Algorithm.MemoryAndBuffer.RegFile;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Scanner;
+import java.util.*;
 
 
 public class Reservation_Station implements Iterable {
-	private Reservation_Station_Element [] LW ;
-	private int LW_counter =0 ;
-	private Reservation_Station_Element [] SW ;
-	private int SW_counter =0 ;
-	private Reservation_Station_Element [] JMP_JALR_RET ;
-	private int JMP_JALR_RET_counter =0 ;
-	private Reservation_Station_Element [] BEQ  ;
-	private int []branch_imm  = new int [2];
-	private int BEQ_counter =0 ;
-	private Reservation_Station_Element []ADD_SUB_ADDI ;
-	private int ADD_SUB_ADDI_counter =0 ;
-	private Reservation_Station_Element [] NAND;
-	private int NAND_counter =0 ;
-	private Reservation_Station_Element [] MUL ;
-	private int MUL_counter =0 ;
+	private Map<String, Reservation_Station_Element[]> elements;
+	private Reservation_Station_Element[] LW;
+	private Reservation_Station_Element[] SW;
+	private Reservation_Station_Element[] JMP_JALR_RET;
+	private Reservation_Station_Element[] BEQ;
+	private Reservation_Station_Element[] ADD_SUB_ADDI;
+	private Reservation_Station_Element[] NAND;
+	private Reservation_Station_Element[] MUL;
 
-	public static String[] formats = {"LW", "SW", "JMP_JALR_RET", "BEQ", "ADD_SUB_ADDI", "NAND", "MUL"};
+	private Map<String, Integer> counters;
+	private int SW_counter = 0;
+	private int LW_counter = 0;
+	private int BEQ_counter = 0;
+	private int JMP_JALR_RET_counter = 0;
+	private int[] branch_imm = new int[2];
+	private int ADD_SUB_ADDI_counter = 0;
+	private int NAND_counter = 0;
+	private int MUL_counter = 0;
 
-	public Reservation_Station() {
+	static String[] formats = {"LW", "SW", "JMP_JALR_RET", "BEQ", "ADD_SUB_ADDI", "NAND", "MUL"};
+
+	Reservation_Station() {
 		LW = new Reservation_Station_Element[2];
 		for (int i = 0; i < 2; i++)
 			LW[i] = new Reservation_Station_Element();
+
+
 		SW = new Reservation_Station_Element[2];
 		for (int i = 0; i < 2; i++)
 			SW[i] = new Reservation_Station_Element();
@@ -52,926 +55,236 @@ public class Reservation_Station implements Iterable {
 		for (int i = 0; i < 2; i++)
 			MUL[i] = new Reservation_Station_Element();
 
+		elements = new HashMap<>();
+		elements.put("LW", LW);
+		elements.put("SW", SW);
+		elements.put("JMP", JMP_JALR_RET);
+		elements.put("JALR", JMP_JALR_RET);
+		elements.put("RET", JMP_JALR_RET);
+		elements.put("BEQ", BEQ);
+		elements.put("ADD", ADD_SUB_ADDI);
+		elements.put("SUB", ADD_SUB_ADDI);
+		elements.put("ADDI", ADD_SUB_ADDI);
+		elements.put("NAND", NAND);
+		elements.put("MUL", MUL);
+		counters = new HashMap<>();
 	}
 
-	public void add(Instruction inst, ROB rob, int rob_ind, int PC) {
-		int y;
-		switch (inst.getName()) {
-			case Instruction.LW: {
-				y = empty_index(LW);
-				LW[y].operation = inst.getName();
-				LW[y].busy = true;
-				LW[y].Qj = null;
-				LW[y].Vj = null;
-				LW[y].Qk = null;
-				LW[y].PC = PC;
-				LW[y].Vk = null;
-				LW[y].rob_indx = rob_ind;
-				LW_counter++;
-				System.out.println(inst.getName() + " inst added!! ");
-				break;
-			}
-
-			case Instruction.SW: {
-				y = empty_index(SW);
-
-
-				SW[y].operation = inst.getName();
-				SW[y].busy = true;
-				SW[y].Vj = null;
-				SW[y].Qj = null;
-				SW[y].Vk = null;
-				SW[y].Qk = null;
-				SW[y].PC = PC;
-				SW[y].rob_indx = rob_ind;
-				SW_counter++;
-				System.out.println(inst.getName() + " inst added!! ");
-				break;
-			}
-			case Instruction.JMP: {
-				y = empty_index(JMP_JALR_RET);
-
-
-				JMP_JALR_RET[y].operation = inst.getName();
-				JMP_JALR_RET[y].busy = true;
-				JMP_JALR_RET_counter++;
-				JMP_JALR_RET[y].Qj = null;
-				JMP_JALR_RET[y].Qk = null;
-				JMP_JALR_RET[y].PC = PC;
-				JMP_JALR_RET[y].Vj = inst.getImm();
-				JMP_JALR_RET[y].Vk = null;
-				JMP_JALR_RET[y].rob_indx = rob_ind;
-				System.out.println(inst.getName() + " inst added!! ");
-
-				break;
-
-			}
-			case Instruction.JALR: {
-				y = empty_index(JMP_JALR_RET);
-
-
-				JMP_JALR_RET[y].operation = inst.getName();
-				JMP_JALR_RET[y].busy = true;
-				JMP_JALR_RET[y].Vk = null;
-				JMP_JALR_RET[y].Qk = null;
-				JMP_JALR_RET[y].PC = PC;
-
-				int rob_indx;
-				rob_indx = rob.find_dest(inst.getRegB(), JMP_JALR_RET[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					JMP_JALR_RET[y].Vj = RegFile.read(inst.getRegB());
-					JMP_JALR_RET[y].Qj = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						JMP_JALR_RET[y].Vj = rob.get_value(rob_indx);
-						JMP_JALR_RET[y].Qj = null;
-					} else {
-						JMP_JALR_RET[y].Qj = rob_indx;
-						JMP_JALR_RET[y].Vj = null;
-					}
-
-				}
-				JMP_JALR_RET[y].rob_indx = rob_ind;
-				JMP_JALR_RET_counter++;
-				System.out.println(inst.getName() + " inst added!! ");
-
-				break;
-			}
-
-			case Instruction.RET: {
-				y = empty_index(JMP_JALR_RET);
-
-
-				JMP_JALR_RET[y].operation = inst.getName();
-				JMP_JALR_RET[y].busy = true;
-				JMP_JALR_RET[y].PC = PC;
-
-				int rob_indx;
-				rob_indx = rob.find_dest(inst.getRegA(), JMP_JALR_RET[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					JMP_JALR_RET[y].Vj = RegFile.read(inst.getRegA());
-					JMP_JALR_RET[y].Qj = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						JMP_JALR_RET[y].Vj = rob.get_value(rob_indx);
-						JMP_JALR_RET[y].Qj = null;
-					} else {
-						JMP_JALR_RET[y].Qj = rob_indx;
-						JMP_JALR_RET[y].Vj = null;
-					}
-
-				}
-
-				JMP_JALR_RET[y].Qk = null;
-				JMP_JALR_RET[y].Vk = null;
-				JMP_JALR_RET[y].rob_indx = rob_ind;
-				JMP_JALR_RET_counter++;
-				System.out.println(inst.getName() + " inst added!! ");
-
-
-				break;
-			}
-			case Instruction.BEQ: {
-				y = empty_index(BEQ);
-
-
-				BEQ[y].operation = inst.getName();
-				BEQ[y].busy = true;
-				BEQ[y].PC = PC;
-				branch_imm[y] = inst.getImm();
-				BEQ[y].rob_indx = rob_ind;
-
-				int rob_indx;
-				rob_indx = rob.find_dest(inst.getRegA(), BEQ[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					BEQ[y].Vj = RegFile.read(inst.getRegA());
-					BEQ[y].Qj = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						BEQ[y].Vj = rob.get_value(rob_indx);
-						BEQ[y].Qj = null;
-					} else {
-						BEQ[y].Qj = rob_indx;
-						BEQ[y].Vj = null;
-					}
-
-				}
-
-
-				rob_indx = rob.find_dest(inst.getRegB(), BEQ[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					BEQ[y].Vk = RegFile.read(inst.getRegB());
-					BEQ[y].Qk = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						BEQ[y].Vk = rob.get_value(rob_indx);
-						BEQ[y].Qk = null;
-					} else {
-						BEQ[y].Qk = rob_indx;
-						BEQ[y].Vk = null;
-					}
-
-				}
-				BEQ_counter++;
-				System.out.println(inst.getName() + " inst added!! ");
-
-				break;
-			}
-			case Instruction.ADD: {
-				y = empty_index(ADD_SUB_ADDI);
-
-
-				ADD_SUB_ADDI[y].operation = inst.getName();
-				ADD_SUB_ADDI[y].busy = true;
-				ADD_SUB_ADDI[y].rob_indx = rob_ind;
-				ADD_SUB_ADDI[y].PC = PC;
-
-				int rob_indx;
-				rob_indx = rob.find_dest(inst.getRegB(), ADD_SUB_ADDI[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					ADD_SUB_ADDI[y].Vj = RegFile.read(inst.getRegB());
-					ADD_SUB_ADDI[y].Qj = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						ADD_SUB_ADDI[y].Vj = rob.get_value(rob_indx);
-						ADD_SUB_ADDI[y].Qj = null;
-					} else {
-						ADD_SUB_ADDI[y].Qj = rob_indx;
-						ADD_SUB_ADDI[y].Vj = null;
-					}
-
-				}
-
-
-				rob_indx = rob.find_dest(inst.getRegC(), ADD_SUB_ADDI[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					ADD_SUB_ADDI[y].Vk = RegFile.read(inst.getRegC());
-					ADD_SUB_ADDI[y].Qk = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						ADD_SUB_ADDI[y].Vk = rob.get_value(rob_indx);
-						ADD_SUB_ADDI[y].Qk = null;
-					} else {
-						ADD_SUB_ADDI[y].Qk = rob_indx;
-						ADD_SUB_ADDI[y].Vk = null;
-					}
-
-				}
-
-				ADD_SUB_ADDI_counter++;
-				System.out.println(inst.getName() + " inst added!! ");
-
-				break;
-			}
-			case Instruction.ADDI: {
-				y = empty_index(ADD_SUB_ADDI);
-
-
-				ADD_SUB_ADDI[y].operation = inst.getName();
-				ADD_SUB_ADDI[y].busy = true;
-				ADD_SUB_ADDI[y].rob_indx = rob_ind;
-				ADD_SUB_ADDI[y].PC = PC;
-
-				int rob_indx;
-				rob_indx = rob.find_dest(inst.getRegB(), ADD_SUB_ADDI[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					ADD_SUB_ADDI[y].Vj = RegFile.read(inst.getRegB());
-					ADD_SUB_ADDI[y].Qj = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						ADD_SUB_ADDI[y].Vj = rob.get_value(rob_indx);
-						ADD_SUB_ADDI[y].Qj = null;
-					} else {
-						ADD_SUB_ADDI[y].Qj = rob_indx;
-						ADD_SUB_ADDI[y].Vj = null;
-					}
-
-				}
-
-
-				ADD_SUB_ADDI[y].Vk = inst.getImm();
-
-
-				ADD_SUB_ADDI_counter++;
-				System.out.println(inst.getName() + " inst added!! ");
-
-				break;
-			}
-			case Instruction.SUB: {
-				y = empty_index(ADD_SUB_ADDI);
-
-
-				ADD_SUB_ADDI[y].operation = inst.getName();
-				ADD_SUB_ADDI[y].busy = true;
-				ADD_SUB_ADDI[y].rob_indx = rob_ind;
-				ADD_SUB_ADDI[y].PC = PC;
-
-				int rob_indx;
-				rob_indx = rob.find_dest(inst.getRegB(), ADD_SUB_ADDI[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					ADD_SUB_ADDI[y].Vj = RegFile.read(inst.getRegB());
-					ADD_SUB_ADDI[y].Qj = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						ADD_SUB_ADDI[y].Vj = rob.get_value(rob_indx);
-						ADD_SUB_ADDI[y].Qj = null;
-					} else {
-						ADD_SUB_ADDI[y].Qj = rob_indx;
-						ADD_SUB_ADDI[y].Vj = null;
-					}
-
-				}
-
-
-				rob_indx = rob.find_dest(inst.getRegC(), ADD_SUB_ADDI[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					ADD_SUB_ADDI[y].Vk = RegFile.read(inst.getRegC());
-					ADD_SUB_ADDI[y].Qk = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						ADD_SUB_ADDI[y].Vk = rob.get_value(rob_indx);
-						ADD_SUB_ADDI[y].Qk = null;
-					} else {
-						ADD_SUB_ADDI[y].Qk = rob_indx;
-						ADD_SUB_ADDI[y].Vk = null;
-					}
-
-				}
-
-				ADD_SUB_ADDI_counter++;
-				System.out.println(inst.getName() + " inst added!! ");
-				break;
-
-			}
-			case Instruction.NAND: {
-				y = empty_index(NAND);
-
-
-				NAND[y].operation = inst.getName();
-				NAND[y].busy = true;
-				NAND[y].rob_indx = rob_ind;
-				NAND[y].PC = PC;
-
-				int rob_indx;
-				rob_indx = rob.find_dest(inst.getRegB(), NAND[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					NAND[y].Vj = RegFile.read(inst.getRegB());
-					NAND[y].Qj = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						NAND[y].Vj = rob.get_value(rob_indx);
-						NAND[y].Qj = null;
-					} else {
-						NAND[y].Qj = rob_indx;
-						NAND[y].Vj = null;
-					}
-
-				}
-
-
-				rob_indx = rob.find_dest(inst.getRegC(), NAND[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					NAND[y].Vk = RegFile.read(inst.getRegC());
-					NAND[y].Qk = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						NAND[y].Vk = rob.get_value(rob_indx);
-						NAND[y].Qk = null;
-					} else {
-						NAND[y].Qk = rob_indx;
-						NAND[y].Vk = null;
-					}
-
-				}
-
-				NAND_counter++;
-				System.out.println(inst.getName() + " inst added!! ");
-
-				break;
-			}
-			case Instruction.MUL: {
-				y = empty_index(MUL);
-
-
-				MUL[y].operation = inst.getName();
-				MUL[y].busy = true;
-				MUL[y].rob_indx = rob_ind;
-				MUL[y].PC = PC;
-				int rob_indx;
-				rob_indx = rob.find_dest(inst.getRegB(), MUL[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					MUL[y].Vj = RegFile.read(inst.getRegB());
-					MUL[y].Qj = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						MUL[y].Vj = rob.get_value(rob_indx);
-						MUL[y].Qj = null;
-					} else {
-						MUL[y].Qj = rob_indx;
-						MUL[y].Vj = null;
-					}
-
-				}
-
-
-				rob_indx = rob.find_dest(inst.getRegC(), MUL[y].rob_indx);
-				if (rob_indx == -1) //not found in ROB
-				{
-
-					MUL[y].Vk = RegFile.read(inst.getRegC());
-					MUL[y].Qk = null;
-				} else //in ROB
-				{
-					if (rob.is_ready(rob_indx)) // if rob entry is available not in queue
-					{
-						MUL[y].Vk = rob.get_value(rob_indx);
-						MUL[y].Qk = null;
-					} else {
-						MUL[y].Qk = rob_indx;
-						MUL[y].Vk = null;
-					}
-
-				}
-
-				MUL_counter++;
-				System.out.println(inst.getName() + " inst added!! ");
-
-				break;
-			}
-			default: {
-				System.out.println(inst.getName() + " failed to add ");
-				break;
-			}
-
+	void add(Instruction inst, ROB rob, int rob_ind, int PC) {
+		Reservation_Station_Element[] x = elements.get(inst.getName());
+		int y = empty_index(x);
+		x[y].operation = inst.getName();
+		x[y].busy = true;
+		x[y].Vj = null;
+		x[y].Qj = null;
+		x[y].Vk = null;
+		x[y].Qk = null;
+		x[y].PC = PC;
+		//SW LW JMP NO HERE
+		int rob_indx = rob.find_dest(inst.getRegB(), x[y].rob_indx);
+		if (rob_indx == -1) { //not found in ROB
+			x[y].Vj = RegFile.read(inst.getRegB());
+			x[y].Qj = null;
+		} else if (rob.is_ready(rob_indx)) { //in ROB  // if rob entry is available not in queue
+			x[y].Vj = rob.get_value(rob_indx);
+			x[y].Qj = null;
+		} else {
+			x[y].Qj = rob_indx;
+			x[y].Vj = null;
 		}
+
+		x[y].rob_indx = rob_ind;
+		counters.put(inst.getName(), counters.get(inst.getName()) + 1);
+		System.out.println(inst.getName() + " inst added!! ");
+		//JMP
+		JMP_JALR_RET[y].Vj = inst.getImm();
+		//RegA	//JALR vj qj
+		//RET vj qj
+		//RegAB  //BEQ
+		branch_imm[y] = inst.getImm();
+		//RegBC //ADD // Sub //NAND vj qj vk qk
+		// ADDI
+		ADD_SUB_ADDI[y].Vk = inst.getImm();
+		//Mul Nothing?
+		//Default
+		System.out.println(inst.getName() + " failed to add ");
+
 	}
 
-	public void remove (String type, ROB rob , int CC , Integer PC , Integer PC2)
-	{
-
-		int k = get_ready(type); //retrieves an inst with ready operands !!
-		if (k != -1 )
-		{
-			switch (type)
-			{
-				case "LW" :
-				{
-					if (!LW[k].PC.equals(PC) && !LW[k].PC.equals(PC2) || (PC==null && PC2==null))
-					{
-						System.out.println("a " + LW[k].operation + " is executing  ");
-						LW[k].execution_start_cycle = CC;
-					}
-
-
-				}
-				break ;
-				case "SW" :
-				{
-					if (!SW[k].PC.equals(PC) && !SW[k].PC.equals(PC2) || (PC==null && PC2==null))
-					{
-						System.out.println("a " + SW[k].operation + " is executing  ");
-						SW[k].execution_start_cycle = CC; //stores the cycle it started execution in
-					}
-
-
-				}
-				break ;
-				case "JMP_JALR_RET" :
-				{
-					if (!JMP_JALR_RET[k].PC.equals(PC) && !JMP_JALR_RET[k].PC.equals(PC2) || (PC==null && PC2==null))
-					{
-						System.out.println("a " + JMP_JALR_RET[k].operation + " is executing  ");
-						JMP_JALR_RET[k].execution_start_cycle = CC;
-					}
-
-				}
-				break ;
-				case "BEQ" :
-				{
-					if (!BEQ[k].PC.equals(PC) && !BEQ[k].PC.equals(PC2) || (PC==null && PC2==null))
-					{
-						System.out.println("a " + BEQ[k].operation + " is executing  ");
-						BEQ[k].execution_start_cycle = CC;
-					}
-
-
-
-				}
-				break ;
-				case "ADD_SUB_ADDI" :
-				{
-					if (!ADD_SUB_ADDI[k].PC.equals(PC) && !ADD_SUB_ADDI[k].PC.equals(PC2) || (PC==null && PC2==null))
-					{
-						ADD_SUB_ADDI[k].execution_start_cycle = CC;
-						System.out.println("a " + ADD_SUB_ADDI[k].operation + " is executing  ");
-					}
-
-
-
-				}
-				break ;
-				case "NAND" :
-				{
-					if (!NAND[k].PC.equals(PC) && !NAND[k].PC.equals(PC2) || (PC==null && PC2==null))
-					{
-						NAND[k].execution_start_cycle = CC ;
-						System.out.println("a " + NAND[k].operation + " is executing  ");
-					}
-				}
-				break ;
-				case "MUL" :
-				{
-					if (!MUL[k].PC.equals(PC) && !MUL[k].PC.equals(PC2) || (PC==null && PC2==null))
-					{
-						MUL[k].execution_start_cycle = CC ;
-						System.out.println("a " + MUL[k].operation + " is executing  ");
-					}
-
-					break ;
-
-				}
-			}
-		}
-		else
-		{
-			System.out.println ("No Ready " +type + " Instructions !!");
+	void remove(String type, ROB rob, int CC, Integer PC, Integer PC2) {
+		//retrieves an inst with ready operands !!
+		int k = get_ready(type);
+		if (k != -1) {
+			//type is combined for some instrs???
+			runDupe1(elements.get(type)[k], CC, PC, PC2);
+		} else {
+			System.out.println("No Ready " + type + " Instructions !!");
 		}
 
 	}
 
-
+	private void runDupe1(Reservation_Station_Element x, int CC, Integer PC, Integer PC2) {
+		if (!x.PC.equals(PC) && !x.PC.equals(PC2) || (PC == null && PC2 == null)) {
+			x.execution_start_cycle = CC;
+			System.out.println("a " + x.operation + " is executing  ");
+		}
+	}
 
 	private int empty_index(Reservation_Station_Element[] arr) {
 		for (int i = 0; i < arr.length; i++) {
-
 			if (!arr[i].busy)
 				return i;
 		}
-
 		return -1;
 	}
 
-	public boolean check (Instruction instr)
-	{
-		int y ;
-		switch (instr.getName())
-		{
-			case Instruction.ADD  :
-			{ y = empty_index (ADD_SUB_ADDI);
-				return y != -1;
-			}
-			case Instruction.SUB :
-			{ y = empty_index (ADD_SUB_ADDI);
-				return y != -1;
-			}
-
-			case Instruction.ADDI :
-			{ y = empty_index (ADD_SUB_ADDI);
-				return y != -1;
-			}
-			case Instruction.BEQ :
-			{ y = empty_index (BEQ);
-				return y != -1;
-			}
-			case Instruction.NAND :
-			{ y = empty_index (NAND);
-				return y != -1;
-			}
-			case Instruction.MUL :
-			{ y = empty_index (MUL);
-				return y != -1;
-			}
-			case Instruction.JMP :
-			{ y = empty_index (JMP_JALR_RET);
-				return y != -1;
-			}
-
-			case Instruction.JALR :
-			{ y = empty_index (JMP_JALR_RET);
-				return y != -1;
-			}
-
-			case Instruction.RET :
-			{ y = empty_index (JMP_JALR_RET);
-				return y != -1;
-			}
-
-			case Instruction.LW :
-			{ y = empty_index (LW);
-				return y != -1;
-			}
-
-			case Instruction.SW :
-			{ y = empty_index (SW);
-				return y != -1;
-			}
-			default :
-				return false ;
-		}
-
+	public boolean check(Instruction instr) {
+		int y;
+		y = empty_index(elements.get(instr.getName()));
+		return y != -1;
 	}
 
 	public void finish_execution(int CC, ROB rob) {
 		Integer result;
-		for (int i = 0; i < 2; i++)
-			if (LW[i].execution_start_cycle != null) {
-				if (CC - LW[i].execution_start_cycle >= 2) {
-					LW[i].Qj = null;
-					LW[i].Qk = null;
-					LW[i].Vj = null;
-					LW[i].Vk = null;
-					LW[i].busy = false;
-					LW[i].execution_start_cycle = null;
-					LW[i].PC = null;
-					LW[i].operation = null;
-					LW[i].rob_indx = null;
-				}
-			}
-
-
-		for (int i = 0; i < 2; i++)
-			if (SW[i].execution_start_cycle != null) {
-				if (CC - SW[i].execution_start_cycle >= 2) {
-					SW[i].Qj = null;
-					SW[i].Qk = null;
-					SW[i].Vj = null;
-					SW[i].Vk = null;
-					SW[i].busy = false;
-					SW[i].operation = null;
-					SW[i].rob_indx = null;
-					SW[i].execution_start_cycle = null;
-					SW[i].PC = null;
-
-				}
-			}
-
-		for (int i = 0; i < 3; i++)
-			if (JMP_JALR_RET[i].execution_start_cycle != null) {
-				if (CC - JMP_JALR_RET[i].execution_start_cycle >= 1) {
-					if (JMP_JALR_RET[i].operation.equals(Instruction.JMP)) {
-						result = JMP_JALR_RET[i].PC + JMP_JALR_RET[i].Vj;
-						rob.set_value(JMP_JALR_RET[i].rob_indx, result, null); //write pc+imm to rob with dest pc
-					} else if (JMP_JALR_RET[i].operation.equals(Instruction.JALR)) {
-						result = JMP_JALR_RET[i].PC + 1;
-						rob.set_value(JMP_JALR_RET[i].rob_indx, result, JMP_JALR_RET[i].Vj); //write pc+imm to rob with dest pc
-						update(NAND[i].rob_indx, result); //update reservation station
-					} else if (JMP_JALR_RET[i].operation.equals(Instruction.RET)) {
-						result = JMP_JALR_RET[i].Vj;
-						rob.set_value(JMP_JALR_RET[i].rob_indx, result, null); //write pc+imm to rob with dest pc
-					}
-
-					JMP_JALR_RET[i].Qj = null;
-					JMP_JALR_RET[i].Qk = null;
-					JMP_JALR_RET[i].Vj = null;
-					JMP_JALR_RET[i].Vk = null;
-					JMP_JALR_RET[i].busy = false;
-					JMP_JALR_RET[i].operation = null;
-					JMP_JALR_RET[i].execution_start_cycle = null;
-					JMP_JALR_RET[i].PC = null;
-
-				}
-			}
-
-		for (int i = 0; i < 2; i++)
-			if (BEQ[i].execution_start_cycle != null) {
-				if (CC - BEQ[i].execution_start_cycle >= 1) {
-					result = execute(BEQ[i]);
-					if (result == 0) //branch taken
-					{
-						if (branch_imm[i] > 0) {
-							result = branch_imm[i] + BEQ[i].PC; //store in branch pc pc+imm while adding !!!
-							rob.set_value(BEQ[i].rob_indx, result, null);
-						} else {
-							result = null;
-							rob.set_value(BEQ[i].rob_indx, result, null);
+		for (Map.Entry<String, Reservation_Station_Element[]> element : elements.entrySet()) {
+			for (Reservation_Station_Element element2 : element.getValue()) {
+				if (element2.execution_start_cycle != null) {
+					if (CC - element2.execution_start_cycle >= 2) { //JMP_JAL_RET BEQ NAND >= 1 MUL >= 8
+						if (element2.operation.equals(Instruction.JMP)) {
+							result = element2.PC + element2.Vj;
+							rob.set_value(element2.rob_indx, result, null); //write pc+imm to rob with dest pc
+						} else if (element2.operation.equals(Instruction.JALR)) {
+							result = element2.PC + 1;
+							rob.set_value(element2.rob_indx, result, element2.Vj); //write pc+imm to rob with dest pc
+							update(NAND[i].rob_indx, result); //update reservation station
+						} else if (element2.operation.equals(Instruction.RET)) {
+							result = element2.Vj;
+							rob.set_value(element2.rob_indx, result, null); //write pc+imm to rob with dest pc
 						}
-					} else {
-						if (branch_imm[i] < 0) {
-							result = branch_imm[i] + BEQ[i].PC; //store in branch pc pc+imm while adding !!!
-							rob.set_value(BEQ[i].rob_indx, result, null);
+
+						//BEQ
+						result = execute(element2);
+						if (result == 0) //branch taken
+						{
+							if (branch_imm[i] > 0) {
+								result = branch_imm[i] + element2.PC; //store in branch pc pc+imm while adding !!!
+								rob.set_value(element2.rob_indx, result, null);
+							} else {
+								result = null;
+								rob.set_value(element2.rob_indx, result, null);
+							}
 						} else {
-							result = null;
-							rob.set_value(BEQ[i].rob_indx, result, null);
+							if (branch_imm[i] < 0) {
+								result = branch_imm[i] + element2.PC; //store in branch pc pc+imm while adding !!!
+								rob.set_value(element2.rob_indx, result, null);
+							} else {
+								result = null;
+								rob.set_value(element2.rob_indx, result, null);
+							}
 						}
+
+						//NAND
+						System.out.println(NAND[i].operation + "Is done Executing");
+						result = execute(NAND[i]);
+						rob.set_value(NAND[i].rob_indx, result, null);
+						update(NAND[i].rob_indx, result);
+
+
+						//ADD_SUB_ADDI
+						System.out.println(ADD_SUB_ADDI[i].operation + "Is done Executing");
+						result = execute(ADD_SUB_ADDI[i]);
+						rob.set_value(ADD_SUB_ADDI[i].rob_indx, result, null);
+						update(ADD_SUB_ADDI[i].rob_indx, result);
+
+						//MUL
+						System.out.println(MUL[i].operation + "Is done Executing");
+						result = execute(MUL[i]);
+						rob.set_value(MUL[i].rob_indx, result, null);
+						update(MUL[i].rob_indx, result);
+
+
+						element2.Qj = null;
+						element2.Qk = null;
+						element2.Vj = null;
+						element2.Vk = null;
+						element2.busy = false;
+						element2.execution_start_cycle = null;
+						element2.PC = null;
+						element2.operation = null;
+						element2.rob_indx = null;
 					}
+				}
 
-					BEQ[i].Qj = null;
-					BEQ[i].Qk = null;
-					BEQ[i].Vj = null;
-					BEQ[i].Vk = null;
-					BEQ[i].busy = false;
-					BEQ[i].operation = null;
-					BEQ[i].rob_indx = null;
-					BEQ[i].execution_start_cycle = null;
-					BEQ[i].PC = null;
-				}
 			}
-		for (int i = 0; i < 3; i++)
-			if (ADD_SUB_ADDI[i].execution_start_cycle != null) {
-				if (CC - ADD_SUB_ADDI[i].execution_start_cycle >= 2) {
-					System.out.println(ADD_SUB_ADDI[i].operation + "Is done Executing");
-					result = execute(ADD_SUB_ADDI[i]);
-					rob.set_value(ADD_SUB_ADDI[i].rob_indx, result, null);
-					update(ADD_SUB_ADDI[i].rob_indx, result);
-					ADD_SUB_ADDI[i].Qj = null;
-					ADD_SUB_ADDI[i].Qk = null;
-					ADD_SUB_ADDI[i].Vj = null;
-					ADD_SUB_ADDI[i].Vk = null;
-					ADD_SUB_ADDI[i].busy = false;
-					ADD_SUB_ADDI[i].operation = null;
-					ADD_SUB_ADDI[i].rob_indx = null;
-					ADD_SUB_ADDI[i].execution_start_cycle = null;
-					ADD_SUB_ADDI[i].PC = null;
-
-				}
-			}
-
-		for (int i = 0; i < 1; i++)
-			if (NAND[i].execution_start_cycle != null) {
-				if (CC - NAND[i].execution_start_cycle >= 1) {
-					System.out.println(NAND[i].operation + "Is done Executing");
-					result = execute(NAND[i]);
-					rob.set_value(NAND[i].rob_indx, result, null);
-					update(NAND[i].rob_indx, result);
-					NAND[i].Qj = null;
-					NAND[i].Qk = null;
-					NAND[i].Vj = null;
-					NAND[i].Vk = null;
-					NAND[i].busy = false;
-					NAND[i].operation = null;
-					NAND[i].rob_indx = null;
-					NAND[i].execution_start_cycle = null;
-					NAND[i].PC = null;
-				}
-			}
-		for (int i = 0; i < 2; i++)
-			if (MUL[i].execution_start_cycle != null) {
-				if (CC - MUL[i].execution_start_cycle >= 8) {
-					System.out.println(MUL[i].operation + "Is done Executing");
-					result = execute(MUL[i]);
-					rob.set_value(MUL[i].rob_indx, result, null);
-					update(MUL[i].rob_indx, result);
-					MUL[i].Qj = null;
-					MUL[i].Qk = null;
-					MUL[i].Vj = null;
-					MUL[i].Vk = null;
-					MUL[i].busy = false;
-					MUL[i].operation = null;
-					MUL[i].rob_indx = null;
-					MUL[i].execution_start_cycle = null;
-					MUL[i].PC = null;
-				}
-			}
+		}
 	}
 
 	private Integer execute(Reservation_Station_Element rtrn) {
-		Integer result = null;
-		if (rtrn.operation.equals(Instruction.ADD) || rtrn.operation.equals(Instruction.ADDI)) {
-			result = rtrn.Vj + rtrn.Vk;
-		} else if (rtrn.operation.equals(Instruction.SUB)) {
-			result = rtrn.Vj - rtrn.Vk;
-		} else if (rtrn.operation.equals(Instruction.MUL)) {
-			result = rtrn.Vj * rtrn.Vk;
-		} else if (rtrn.operation.equals(Instruction.NAND)) {
-			result = ~(rtrn.Vj & rtrn.Vk);
-		} else if (rtrn.operation.equals(Instruction.BEQ)) {
-			result = rtrn.Vj - rtrn.Vk;
+		Integer result;
+		switch (rtrn.operation) {
+			case Instruction.ADD:
+			case Instruction.ADDI:
+				result = rtrn.Vj + rtrn.Vk;
+				break;
+			case Instruction.SUB:
+			case Instruction.BEQ:
+				result = rtrn.Vj - rtrn.Vk;
+				break;
+			case Instruction.MUL:
+				result = rtrn.Vj * rtrn.Vk;
+				break;
+			case Instruction.NAND:
+				result = ~(rtrn.Vj & rtrn.Vk);
+				break;
+			default:
+				result = null;
 		}
-
-
 		return result;
-
 	}
 
 	private int get_ready(String type) {
-		switch (type) {
-			case "LW": {
-				for (int i = 0; i < LW.length; i++)
-					if (LW[i].operation != null && LW[i].busy && LW[i].execution_start_cycle == null) //always ready
-						return i;
-				return -1;
-			}
-
-			case "SW": {
-				for (int i = 0; i < LW.length; i++)
-					if (SW[i].operation != null && SW[i].busy && SW[i].execution_start_cycle == null) //always ready
-						return i;
-				return -1;
-			}
-
-			case "JMP_JALR_RET": {
-				for (int i = 0; i < JMP_JALR_RET.length; i++)
-					if (JMP_JALR_RET[i].operation != null && JMP_JALR_RET[i].busy && JMP_JALR_RET[i].Vj != null && JMP_JALR_RET[i].execution_start_cycle == null)
-						return i;
-				return -1;
-			}
-
-			case "BEQ": {
-				for (int i = 0; i < BEQ.length; i++)
-					if (BEQ[i].operation != null && BEQ[i].Vj != null && BEQ[i].Vk != null && BEQ[i].busy && BEQ[i].execution_start_cycle == null)
-						return i;
-				return -1;
-			}
-			case "ADD_SUB_ADDI": {
-				for (int i = 0; i < JMP_JALR_RET.length; i++)
-					if (ADD_SUB_ADDI[i].operation != null && ADD_SUB_ADDI[i].Vj != null && ADD_SUB_ADDI[i].Vk != null && ADD_SUB_ADDI[i].busy && ADD_SUB_ADDI[i].execution_start_cycle == null)
-						return i;
-				return -1;
-			}
-			case "NAND": {
-				for (int i = 0; i < NAND.length; i++)
-					if (NAND[i].operation != null && NAND[i].Vj != null && NAND[i].Vk != null && NAND[i].busy && NAND[i].execution_start_cycle == null)
-						return i;
-				return -1;
-			}
-			case "MUL": {
-				for (int i = 0; i < MUL.length; i++)
-					if (MUL[i].operation != null && MUL[i].Vj != null && MUL[i].Vk != null && MUL[i].busy && MUL[i].execution_start_cycle == null)
-						return i;
-				return -1;
-			}
-			default: {
-				return -1;
-			}
+		//type is combined instrs
+		Reservation_Station_Element[] x = elements.get(type);
+		for (int i = 0; i < x.length; i++) {
+			//always ready LW, SW
+			if (x[i].operation != null && x[i].busy && x[i].execution_start_cycle == null)
+				return i;
+			//always ready JMP, JALR, RET
+			if (x[i].operation != null && x[i].busy && x[i].Vj != null && x[i].execution_start_cycle == null)
+				return i;
+			//always ready BEQ, ADD, SUB, ADDI, NAND, MUL
+			if (x[i].operation != null && x[i].Vj != null && x[i].Vk != null && x[i].busy && x[i].execution_start_cycle == null)
+				return i;
 		}
+		return -1;
 	}
 
 	public int getNumExecutedInstructions() {
-		return (LW_counter + SW_counter + JMP_JALR_RET_counter +
-				BEQ_counter + ADD_SUB_ADDI_counter + NAND_counter + MUL_counter);
+		return (LW_counter + SW_counter + JMP_JALR_RET_counter + BEQ_counter + ADD_SUB_ADDI_counter + NAND_counter + MUL_counter);
 	}
 
 	public int getNumBranchInstrs() {
 		return BEQ_counter;
 	}
 
-	void update (Integer rob_indx  , int result )
-	{
-
-		for (int i=0 ;i<BEQ.length ; i++)
-		{
-			if (BEQ[i].Qj != null && BEQ[i].Qj.equals(rob_indx))
-			{
-				BEQ[i].Vj = result ;
-			}
-			if (BEQ[i].Qk != null && BEQ[i].Qk.equals(rob_indx))
-			{
-				BEQ[i].Vk= result ;
+	void update(Integer rob_indx, int result) {
+		for (Map.Entry<String, Reservation_Station_Element[]> element : elements.entrySet()) {
+			for (Reservation_Station_Element element2 : element.getValue()) {
+				if (element2.Qj != null && element2.Qj.equals(rob_indx)) {
+					element2.Vj = result;
+				}
+				if (element2.Qk != null && element2.Qk.equals(rob_indx)) {
+					element2.Vk = result;
+				}
 			}
 		}
-
-		for (int i=0 ;i<JMP_JALR_RET.length ; i++)
-		{
-			if (JMP_JALR_RET[i].Qj != null && JMP_JALR_RET[i].Qj.equals(rob_indx))
-			{
-				JMP_JALR_RET[i].Vj = result ;
-			}
-			if (JMP_JALR_RET[i].Qk != null && JMP_JALR_RET[i].Qk.equals(rob_indx))
-			{
-				JMP_JALR_RET[i].Vk= result ;
-			}
-		}
-
-
-
-		for (int i=0 ;i<ADD_SUB_ADDI.length ; i++)
-		{
-			if (ADD_SUB_ADDI[i].Qj != null && ADD_SUB_ADDI[i].Qj.equals(rob_indx))
-			{
-				ADD_SUB_ADDI[i].Vj = result ;
-				System.out.print("Updating Result!!!!!!");
-			}
-			if (ADD_SUB_ADDI[i].Qk != null && ADD_SUB_ADDI[i].Qk.equals(rob_indx))
-			{
-				ADD_SUB_ADDI[i].Vk= result ;
-			}
-		}
-
-		for (int i=0 ;i<NAND.length ; i++)
-		{
-			if (NAND[i].Qj != null && NAND[i].Qj.equals(rob_indx))
-			{
-				NAND[i].Vj = result ;
-			}
-			if (NAND[i].Qk != null && NAND[i].Qk.equals(rob_indx))
-			{
-				NAND[i].Vk= result ;
-			}
-		}
-		for (int i=0 ;i<MUL.length ; i++)
-		{
-			if (MUL[i].Qj != null && MUL[i].Qj.equals(rob_indx))
-			{
-				MUL[i].Vj = result ;
-			}
-			if (MUL[i].Qk != null && MUL[i].Qk.equals(rob_indx))
-			{
-				MUL[i].Vk= result ;
-			}
-		}
-
 	}
 
 	@Override
 	public Iterator<Reservation_Station_Element> iterator() {
 		Iterator<Reservation_Station_Element> it;
-		String obj;
-		Scanner reader = new Scanner(System.in);  // Reading from System.in
-		Scanner in = new Scanner(System.in);
-		//System.out.println("Enter Reservation Station Name");
-		//obj = in.nextLine();
-
 		Reservation_Station_Element[] list =
 				new Reservation_Station_Element[15];
-
 		System.arraycopy(LW, 0, list, 0, LW.length);
 		System.arraycopy(SW, 0, list, LW.length, SW.length);
 		System.arraycopy(JMP_JALR_RET, 0, list, LW.length + SW.length, JMP_JALR_RET.length);
@@ -980,7 +293,18 @@ public class Reservation_Station implements Iterable {
 		System.arraycopy(NAND, 0, list, LW.length + SW.length + JMP_JALR_RET.length + BEQ.length + ADD_SUB_ADDI.length, NAND.length);
 		System.arraycopy(MUL, 0, list, LW.length + SW.length + JMP_JALR_RET.length + BEQ.length + ADD_SUB_ADDI.length + NAND.length, MUL.length);
 		it = Arrays.asList(list).iterator();
-		/*
+		return it;
+	}
+
+}
+
+	/*
+
+		String obj;
+		Scanner reader = new Scanner(System.in);  // Reading from System.in
+		Scanner in = new Scanner(System.in);
+		//System.out.println("Enter Reservation Station Name");
+		//obj = in.nextLine();
 		switch (obj) {
 			case "LW": {
 				it = Arrays.asList(LW).iterator();
@@ -1017,8 +341,3 @@ public class Reservation_Station implements Iterable {
 
 		}
 		*/
-		return it;
-	}
-
-
-}

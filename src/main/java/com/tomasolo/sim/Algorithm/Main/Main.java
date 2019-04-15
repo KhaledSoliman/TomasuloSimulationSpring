@@ -30,8 +30,8 @@ public class Main {
 		clkInterface = (ClkInterface) controller;
 		updateCCEverySec();
 
-		 Thread.sleep(2000);
-		 return response;
+		Thread.sleep(4000);
+		return response;
 	}
 
 
@@ -45,11 +45,10 @@ public class Main {
 				if (controller.rob.isEmpty() && controller.instrQueue.isEmpty()) {
 					timer.cancel();
 					double ipc = (float) controller.rs.getNumExecutedInstructions() / CC;
-					if(controller.rs.getNumBranchInstrs() != 0) {
+					if (controller.rs.getNumBranchInstrs() != 0) {
 						float mispredictionRate = (float) (controller.mispredictionNum / controller.rs.getNumBranchInstrs()) * 100;
 						System.out.println("IPC = " + ipc + " \nMisprediction Rate = " + mispredictionRate);
-					}
-					else {
+					} else {
 						System.out.println("IPC = " + ipc + " \nMisprediction Rate = No Branch Instructions were executed");
 					}
 				} else {
@@ -95,7 +94,7 @@ public class Main {
 			}
 		});
 
-		return new Response(robResponse, rsResponse);
+		return new Response(robResponse, rsResponse, RegFile.getRf());
 	}
 
 	private static ArrayList<Instruction> convertToInstructions(InstructionPOJO[] pojos) {
