@@ -1,6 +1,4 @@
-
 package com.tomasolo.sim.Algorithm.Main;
-
 
 import com.tomasolo.sim.Algorithm.Instruction.Instruction;
 import com.tomasolo.sim.Algorithm.MemoryAndBuffer.RegFile;
@@ -8,70 +6,31 @@ import com.tomasolo.sim.Algorithm.MemoryAndBuffer.RegFile;
 import java.util.*;
 
 
-public class Reservation_Station implements Iterable {
-	private Map<String, Reservation_Station_Element[]> elements;
-	private Reservation_Station_Element[] LW;
-	private Reservation_Station_Element[] SW;
-	private Reservation_Station_Element[] JMP_JALR_RET;
-	private Reservation_Station_Element[] BEQ;
-	private Reservation_Station_Element[] ADD_SUB_ADDI;
-	private Reservation_Station_Element[] NAND;
-	private Reservation_Station_Element[] MUL;
-
-	private Map<String, Integer> counters;
-	private int SW_counter = 0;
-	private int LW_counter = 0;
-	private int BEQ_counter = 0;
-	private int JMP_JALR_RET_counter = 0;
+public class ReservationStation implements Iterable {
+	private Map<String, ReservationStationGroup> groups;
 	private int[] branch_imm = new int[2];
-	private int ADD_SUB_ADDI_counter = 0;
-	private int NAND_counter = 0;
-	private int MUL_counter = 0;
 
-	static String[] formats = {"LW", "SW", "JMP_JALR_RET", "BEQ", "ADD_SUB_ADDI", "NAND", "MUL"};
+	static String[] formats = {"LW", "SW", "JMP", "JALR", "RET", "BEQ", "ADD", "SUB", "ADDI", "NAND", "MUL"};
 
-	Reservation_Station() {
-		LW = new Reservation_Station_Element[2];
-		for (int i = 0; i < 2; i++)
-			LW[i] = new Reservation_Station_Element();
-
-
-		SW = new Reservation_Station_Element[2];
-		for (int i = 0; i < 2; i++)
-			SW[i] = new Reservation_Station_Element();
-		JMP_JALR_RET = new Reservation_Station_Element[3];
-		for (int i = 0; i < 3; i++)
-			JMP_JALR_RET[i] = new Reservation_Station_Element();
-		BEQ = new Reservation_Station_Element[2];
-		for (int i = 0; i < 2; i++)
-			BEQ[i] = new Reservation_Station_Element();
-		ADD_SUB_ADDI = new Reservation_Station_Element[3];
-		for (int i = 0; i < 3; i++)
-			ADD_SUB_ADDI[i] = new Reservation_Station_Element();
-		NAND = new Reservation_Station_Element[1];
-		for (int i = 0; i < 1; i++)
-			NAND[i] = new Reservation_Station_Element();
-		MUL = new Reservation_Station_Element[2];
-		for (int i = 0; i < 2; i++)
-			MUL[i] = new Reservation_Station_Element();
-
-		elements = new HashMap<>();
-		elements.put("LW", LW);
-		elements.put("SW", SW);
-		elements.put("JMP", JMP_JALR_RET);
-		elements.put("JALR", JMP_JALR_RET);
-		elements.put("RET", JMP_JALR_RET);
-		elements.put("BEQ", BEQ);
-		elements.put("ADD", ADD_SUB_ADDI);
-		elements.put("SUB", ADD_SUB_ADDI);
-		elements.put("ADDI", ADD_SUB_ADDI);
-		elements.put("NAND", NAND);
-		elements.put("MUL", MUL);
-		counters = new HashMap<>();
+	ReservationStation() {
+		groups = new HashMap<>();
+		groups.put("LW", new ReservationStationGroup(2));
+		groups.put("SW", new ReservationStationGroup(2));
+		ReservationStationGroup JMP_JALR_RET = new ReservationStationGroup(3);
+		groups.put("JMP", JMP_JALR_RET);
+		groups.put("JALR", JMP_JALR_RET);
+		groups.put("RET", JMP_JALR_RET);
+		groups.put("BEQ", new ReservationStationGroup(2));
+		ReservationStationGroup ADD_SUB_ADDI = new ReservationStationGroup(3);
+		groups.put("ADD", ADD_SUB_ADDI);
+		groups.put("SUB", ADD_SUB_ADDI);
+		groups.put("ADDI", ADD_SUB_ADDI);
+		groups.put("NAND", new ReservationStationGroup(1));
+		groups.put("MUL", new ReservationStationGroup(3));
 	}
 
-	void add(Instruction inst, ROB rob, int rob_ind, int PC) {
-		Reservation_Station_Element[] x = elements.get(inst.getName());
+	void add(Instruction inst, ROB rob, int robIndex, int PC) {
+		ReservationStationElement[] x = groups.get(inst.getName()).getElements();
 		int y = empty_index(x);
 		x[y].operation = inst.getName();
 		x[y].busy = true;
@@ -80,21 +39,20 @@ public class Reservation_Station implements Iterable {
 		x[y].Vk = null;
 		x[y].Qk = null;
 		x[y].PC = PC;
+		x[y].robIndex = robIndex;
 		//SW LW JMP NO HERE
-		int rob_indx = rob.find_dest(inst.getRegB(), x[y].rob_indx);
-		if (rob_indx == -1) { //not found in ROB
+		int robIndex2 = rob.find_dest(inst.getRegB(), x[y].robIndex);
+		if (robIndex2 == -1) { //not found in ROB
 			x[y].Vj = RegFile.read(inst.getRegB());
 			x[y].Qj = null;
-		} else if (rob.is_ready(rob_indx)) { //in ROB  // if rob entry is available not in queue
-			x[y].Vj = rob.get_value(rob_indx);
+		} else if (rob.is_ready(robIndex2)) { //in ROB  // if rob entry is available not in queue
+			x[y].Vj = rob.get_value(robIndex2);
 			x[y].Qj = null;
 		} else {
-			x[y].Qj = rob_indx;
+			x[y].Qj = robIndex2;
 			x[y].Vj = null;
 		}
-
-		x[y].rob_indx = rob_ind;
-		counters.put(inst.getName(), counters.get(inst.getName()) + 1);
+		groups.get(inst.getName()).incrementCounter();
 		System.out.println(inst.getName() + " inst added!! ");
 		//JMP
 		JMP_JALR_RET[y].Vj = inst.getImm();
@@ -115,22 +73,19 @@ public class Reservation_Station implements Iterable {
 		//retrieves an inst with ready operands !!
 		int k = get_ready(type);
 		if (k != -1) {
-			//type is combined for some instrs???
-			runDupe1(elements.get(type)[k], CC, PC, PC2);
+			//type is combined for some instrs??? => formats
+			ReservationStationElement x = groups.get(type).getElements()[k];
+			if (!x.PC.equals(PC) && !x.PC.equals(PC2) || (PC == null && PC2 == null)) {
+				x.execution_start_cycle = CC;
+				System.out.println("a " + x.operation + " is executing  ");
+			}
 		} else {
 			System.out.println("No Ready " + type + " Instructions !!");
 		}
 
 	}
 
-	private void runDupe1(Reservation_Station_Element x, int CC, Integer PC, Integer PC2) {
-		if (!x.PC.equals(PC) && !x.PC.equals(PC2) || (PC == null && PC2 == null)) {
-			x.execution_start_cycle = CC;
-			System.out.println("a " + x.operation + " is executing  ");
-		}
-	}
-
-	private int empty_index(Reservation_Station_Element[] arr) {
+	private int empty_index(ReservationStationElement[] arr) {
 		for (int i = 0; i < arr.length; i++) {
 			if (!arr[i].busy)
 				return i;
@@ -138,28 +93,28 @@ public class Reservation_Station implements Iterable {
 		return -1;
 	}
 
-	public boolean check(Instruction instr) {
+	boolean check(Instruction instr) {
 		int y;
-		y = empty_index(elements.get(instr.getName()));
+		y = empty_index(groups.get(instr.getName()).getElements());
 		return y != -1;
 	}
 
-	public void finish_execution(int CC, ROB rob) {
+	void finish_execution(int CC, ROB rob) {
 		Integer result;
-		for (Map.Entry<String, Reservation_Station_Element[]> element : elements.entrySet()) {
-			for (Reservation_Station_Element element2 : element.getValue()) {
+		for (Map.Entry<String, ReservationStationGroup> element : groups.entrySet()) {
+			for (ReservationStationElement element2 : element.getValue().getElements()) {
 				if (element2.execution_start_cycle != null) {
 					if (CC - element2.execution_start_cycle >= 2) { //JMP_JAL_RET BEQ NAND >= 1 MUL >= 8
 						if (element2.operation.equals(Instruction.JMP)) {
 							result = element2.PC + element2.Vj;
-							rob.set_value(element2.rob_indx, result, null); //write pc+imm to rob with dest pc
+							rob.set_value(element2.robIndex, result, null); //write pc+imm to rob with dest pc
 						} else if (element2.operation.equals(Instruction.JALR)) {
 							result = element2.PC + 1;
-							rob.set_value(element2.rob_indx, result, element2.Vj); //write pc+imm to rob with dest pc
+							rob.set_value(element2.robIndex, result, element2.Vj); //write pc+imm to rob with dest pc
 							update(NAND[i].rob_indx, result); //update reservation station
 						} else if (element2.operation.equals(Instruction.RET)) {
 							result = element2.Vj;
-							rob.set_value(element2.rob_indx, result, null); //write pc+imm to rob with dest pc
+							rob.set_value(element2.robIndex, result, null); //write pc+imm to rob with dest pc
 						}
 
 						//BEQ
@@ -168,18 +123,18 @@ public class Reservation_Station implements Iterable {
 						{
 							if (branch_imm[i] > 0) {
 								result = branch_imm[i] + element2.PC; //store in branch pc pc+imm while adding !!!
-								rob.set_value(element2.rob_indx, result, null);
+								rob.set_value(element2.robIndex, result, null);
 							} else {
 								result = null;
-								rob.set_value(element2.rob_indx, result, null);
+								rob.set_value(element2.robIndex, result, null);
 							}
 						} else {
 							if (branch_imm[i] < 0) {
 								result = branch_imm[i] + element2.PC; //store in branch pc pc+imm while adding !!!
-								rob.set_value(element2.rob_indx, result, null);
+								rob.set_value(element2.robIndex, result, null);
 							} else {
 								result = null;
-								rob.set_value(element2.rob_indx, result, null);
+								rob.set_value(element2.robIndex, result, null);
 							}
 						}
 
@@ -211,7 +166,7 @@ public class Reservation_Station implements Iterable {
 						element2.execution_start_cycle = null;
 						element2.PC = null;
 						element2.operation = null;
-						element2.rob_indx = null;
+						element2.robIndex = null;
 					}
 				}
 
@@ -219,7 +174,7 @@ public class Reservation_Station implements Iterable {
 		}
 	}
 
-	private Integer execute(Reservation_Station_Element rtrn) {
+	private Integer execute(ReservationStationElement rtrn) {
 		Integer result;
 		switch (rtrn.operation) {
 			case Instruction.ADD:
@@ -244,7 +199,7 @@ public class Reservation_Station implements Iterable {
 
 	private int get_ready(String type) {
 		//type is combined instrs
-		Reservation_Station_Element[] x = elements.get(type);
+		ReservationStationElement[] x = groups.get(type).getElements();
 		for (int i = 0; i < x.length; i++) {
 			//always ready LW, SW
 			if (x[i].operation != null && x[i].busy && x[i].execution_start_cycle == null)
@@ -259,32 +214,31 @@ public class Reservation_Station implements Iterable {
 		return -1;
 	}
 
-	public int getNumExecutedInstructions() {
-		return (LW_counter + SW_counter + JMP_JALR_RET_counter + BEQ_counter + ADD_SUB_ADDI_counter + NAND_counter + MUL_counter);
+	int getNumExecutedInstructions() {
+		int sum = 0;
+		for (Map.Entry<String, ReservationStationGroup> group : groups.entrySet())
+			sum += group.getValue().getCounter();
+		return sum;
 	}
 
-	public int getNumBranchInstrs() {
-		return BEQ_counter;
+	int getNumBranchInstrs() {
+		return groups.get("BEQ").getCounter();
 	}
 
-	void update(Integer rob_indx, int result) {
-		for (Map.Entry<String, Reservation_Station_Element[]> element : elements.entrySet()) {
-			for (Reservation_Station_Element element2 : element.getValue()) {
-				if (element2.Qj != null && element2.Qj.equals(rob_indx)) {
-					element2.Vj = result;
-				}
-				if (element2.Qk != null && element2.Qk.equals(rob_indx)) {
-					element2.Vk = result;
-				}
+	void update(Integer robIndex, int result) {
+		for (Map.Entry<String, ReservationStationGroup> group : groups.entrySet()) {
+			for (ReservationStationElement element : group.getValue().getElements()) {
+				element.Vj = element.Qj != null && element.Qj.equals(robIndex) ? result : element.Vj;
+				element.Vk = element.Qk != null && element.Qk.equals(robIndex) ? result : element.Vk;
 			}
 		}
 	}
 
 	@Override
-	public Iterator<Reservation_Station_Element> iterator() {
-		Iterator<Reservation_Station_Element> it;
-		Reservation_Station_Element[] list =
-				new Reservation_Station_Element[15];
+	public Iterator<ReservationStationElement> iterator() {
+		Iterator<ReservationStationElement> it;
+		ReservationStationElement[] list =
+				new ReservationStationElement[15];
 		System.arraycopy(LW, 0, list, 0, LW.length);
 		System.arraycopy(SW, 0, list, LW.length, SW.length);
 		System.arraycopy(JMP_JALR_RET, 0, list, LW.length + SW.length, JMP_JALR_RET.length);

@@ -33,11 +33,6 @@ public class Instruction {
 			NAND = "NAND",
 			MUL = "MUL";
 
-
-	/*
-	 *    Constructors
-	 * */
-
 	// lw/sw/beq   or arith constructor
 	public Instruction(String name, String format, int regA, int regB, int imm_regC) throws Exception {
 		this.name = name;
@@ -48,7 +43,8 @@ public class Instruction {
 		if (format.equals(FORMAT_ARITHMETIC))
 			this.regC = imm_regC;
 
-		else if (format.equals(FORMAT_LW_SW) || format.equals(FORMAT_CONDITIONAL_BRANCH) || format.equals(FORMAT_ARITHMETIC_IMM))
+		else if (format.equals(FORMAT_LW_SW) || format.equals(FORMAT_CONDITIONAL_BRANCH) ||
+				format.equals(FORMAT_ARITHMETIC_IMM))
 			this.imm = imm_regC;
 		else
 			throw new Exception("Exception: Please check your format");
@@ -78,11 +74,6 @@ public class Instruction {
 		this.regB = regB;
 	}
 
-
-	/*
-	 *    Getters
-	 * */
-
 	public String getName() {
 		return name;
 	}
@@ -106,7 +97,6 @@ public class Instruction {
 	public int getImm() {
 		return imm;
 	}
-
 
 	public int getPc() {
 		return pc;

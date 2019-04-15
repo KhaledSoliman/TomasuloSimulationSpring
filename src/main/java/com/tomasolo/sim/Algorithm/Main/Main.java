@@ -8,10 +8,8 @@ import com.tomasolo.sim.InstructionPOJO;
 import com.tomasolo.sim.POJO;
 import org.springframework.web.bind.annotation.*;
 
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 @RestController
 public class Main {
@@ -86,10 +84,10 @@ public class Main {
 			});
 		*/
 		ArrayList<String[]> rsResponse = new ArrayList<>();
-		Iterator<Reservation_Station_Element> iteratorRS = controller.rs.iterator();
-		iteratorRS.forEachRemaining(new Consumer<Reservation_Station_Element>() {
+		Iterator<ReservationStationElement> iteratorRS = controller.rs.iterator();
+		iteratorRS.forEachRemaining(new Consumer<ReservationStationElement>() {
 			@Override
-			public void accept(Reservation_Station_Element reservation_station_element) {
+			public void accept(ReservationStationElement reservation_station_element) {
 				rsResponse.add(reservation_station_element.toArray());
 			}
 		});

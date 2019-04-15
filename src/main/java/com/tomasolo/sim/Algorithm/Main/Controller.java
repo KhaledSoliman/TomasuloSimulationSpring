@@ -16,7 +16,7 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 	private LoadBuffer loadBuffer;
 	private Memory memory;
 	ROB rob;
-	Reservation_Station rs;
+	ReservationStation rs;
 	private Integer obj = null;
 	private Integer pcPredict;
 	private Instruction prevInstr;
@@ -27,7 +27,7 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 		loadBuffer = new LoadBuffer(this);
 		memory = new Memory();
 		rob = new ROB();
-		rs = new Reservation_Station();
+		rs = new ReservationStation();
 
 		instrsList = Utils.fillArray(instrs);
 		instrQueue = new InstructionQueue();
@@ -193,16 +193,16 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 
 		if (obj == 1) {
 			Iterator it = rob.iterator();
-			Iterator<Reservation_Station_Element> itRs = rs.iterator();
+			Iterator<ReservationStationElement> itRs = rs.iterator();
 			it.forEachRemaining(new Consumer() {
 				@Override
 				public void accept(Object t) {
 					System.out.println("ROB: " + t.toString());
 				}
 			});
-			itRs.forEachRemaining(new Consumer<Reservation_Station_Element>() {
+			itRs.forEachRemaining(new Consumer<ReservationStationElement>() {
 				@Override
-				public void accept(Reservation_Station_Element reservation_station_element) {
+				public void accept(ReservationStationElement reservation_station_element) {
 
 				}
 			});
@@ -222,7 +222,7 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 	private void execute(Instruction deqIns, Instruction deqIns2) {
 		Integer pc = null;
 		Integer pc2 = null;
-		for (String format : Reservation_Station.formats) {
+		for (String format : ReservationStation.formats) {
 			if (deqIns != null)
 				pc = deqIns.getPc();
 			if (deqIns2 != null)
