@@ -18,7 +18,6 @@ public class Instruction {
 			FORMAT_RET = "RET",
 			FORMAT_ARITHMETIC = "ARITHMETIC INSTRS",
 			FORMAT_ARITHMETIC_IMM = "ARITHMETIC Imm INSTRS";
-
 	// All Instructions
 	public static final String
 			LW = "LW",
@@ -33,45 +32,54 @@ public class Instruction {
 			NAND = "NAND",
 			MUL = "MUL";
 
-	// lw/sw/beq   or arith constructor
-	public Instruction(String name, String format, int regA, int regB, int imm_regC) throws Exception {
+	public Instruction(String name, Integer[] operands) throws Exception {
 		this.name = name;
-		this.format = format;
-		this.regA = regA;
-		this.regB = regB;
-
-		if (format.equals(FORMAT_ARITHMETIC))
-			this.regC = imm_regC;
-
-		else if (format.equals(FORMAT_LW_SW) || format.equals(FORMAT_CONDITIONAL_BRANCH) ||
-				format.equals(FORMAT_ARITHMETIC_IMM))
-			this.imm = imm_regC;
-		else
-			throw new Exception("Exception: Please check your format");
-	}
-
-	// jmp/ret constructor
-	public Instruction(String name, String format, int imm_regA) throws Exception {
-		if (format.equals(FORMAT_UNCONDITIONAL_BRANCH))
-			this.imm = imm_regA;
-		else if (format.equals(FORMAT_RET))
-			this.regA = imm_regA;
-		else
-			throw new Exception("Exception: Please check your format");
-
-		this.name = name;
-		this.format = format;
-	}
-
-	// jalr constructor
-	public Instruction(String name, String format, int regA, int regB) throws Exception {
-		if (!format.equals(FORMAT_JALR))
-			throw new Exception("Exception: Format must be JALR");
-
-		this.name = name;
-		this.format = format;
-		this.regA = regA;
-		this.regB = regB;
+		switch (name) {
+			case LW:
+			case SW:
+				this.format = FORMAT_LW_SW;
+				this.regA = operands[0];
+				this.regB = operands[1];
+				this.imm = operands[2];
+				break;
+			case ADD:
+			case SUB:
+			case MUL:
+			case NAND:
+				this.format = FORMAT_ARITHMETIC;
+				this.regA = operands[0];
+				this.regB = operands[1];
+				this.regC = operands[2];
+				break;
+			case ADDI:
+				this.format = FORMAT_ARITHMETIC_IMM;
+				this.regA = operands[0];
+				this.regB = operands[1];
+				this.imm = operands[2];
+				break;
+			case BEQ:
+				this.format = FORMAT_CONDITIONAL_BRANCH;
+				this.regA = operands[0];
+				this.regB = operands[1];
+				this.imm = operands[2];
+				break;
+			case JALR:
+				this.name = name;
+				this.format = FORMAT_JALR;
+				this.regA = operands[0];
+				this.regB = operands[1];
+				break;
+			case JMP:
+				this.format = FORMAT_UNCONDITIONAL_BRANCH;
+				this.imm = operands[0];
+				break;
+			case RET:
+				this.format = FORMAT_RET;
+				this.regA = operands[0];
+				break;
+			default:
+				throw new Exception("Exception: Please check your format");
+		}
 	}
 
 	public String getName() {

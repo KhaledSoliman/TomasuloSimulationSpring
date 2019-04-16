@@ -5,44 +5,43 @@ import com.tomasolo.sim.Algorithm.MemoryAndBuffer.*;
 
 import java.util.ArrayList;
 
-
-import java.util.Iterator;
-import java.util.function.Consumer;
-
-
 public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface {
-	private ArrayList<Instruction> instrsList;
-	InstructionQueue instrQueue;
+	private ArrayList<Instruction> instructionsList;
 	private LoadBuffer loadBuffer;
 	private Memory memory;
-	ROB rob;
-	ReservationStation rs;
-	private Integer obj = null;
-	private Integer pcPredict;
-	private Instruction prevInstr;
-	int mispredictionNum;
-	public static int awaitingInstrIndex;
+	private Integer pcPrediction;
+	private Instruction prevInstruction;
 
-	public Controller(ArrayList<Instruction> instrs) {
+	InstructionQueue instructionQueue;
+	Rob rob;
+	ReservationStation reservationStation;
+	int missPredictionCount;
+
+	public static int awaitingInstructionIndex;
+
+	/**
+	 * Constructor
+	 *
+	 * @param instructions list of instructions to execute
+	 */
+	public Controller(ArrayList<Instruction> instructions) {
 		loadBuffer = new LoadBuffer(this);
 		memory = new Memory();
-		rob = new ROB();
-		rs = new ReservationStation();
+		rob = new Rob();
+		reservationStation = new ReservationStation();
+		instructionsList = Utils.fillArray(instructions);
+		instructionQueue = new InstructionQueue();
 
-		instrsList = Utils.fillArray(instrs);
-		instrQueue = new InstructionQueue();
-		int pc = 0;
-		for (int i = 0; i < instrsList.size(); i++) {
-			boolean enqueued = instrQueue.enqueue(instrsList.get(i), pc);
+		for (int i = 0; i < instructionsList.size(); i++) {
+			boolean enqueued = instructionQueue.enqueue(instructionsList.get(i));
 			if (!enqueued) {
-				awaitingInstrIndex = i;
+				awaitingInstructionIndex = i;
 				break;
 			}
-			pc += 1;
 		}
-		pcPredict = 0;
-		prevInstr = null;
-		mispredictionNum = 0;
+		pcPrediction = 0;
+		prevInstruction = null;
+		missPredictionCount = 0;
 	}
 
 
@@ -57,99 +56,72 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 	}
 
 	@Override
-	public boolean memoryLoadDone(int rob_index, int data) {
-		rs.update(rob_index, data);
-		return rob.set_value(rob_index, data, null);
+	public boolean memoryLoadDone(int robIndex, int data) {
+		reservationStation.update(robIndex, data);
+		return rob.set_value(robIndex, data, null);
 	}
 
 	@Override
-	public boolean storeInMem(int rob_index, int address, int data) {
+	public boolean storeInMem(int robIndex, int address, int data) {
 		try {
-			return rob.set_value(rob_index, data, address);
+			return rob.set_value(robIndex, data, address);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
 		}
 	}
 
-	// always @ posedge clk
+	/**
+	 * equivalent to always @ posedge clk in verilog
+	 * @param CC current clock cycle
+	 */
 	@Override
 	public void didUpdate(int CC) {
-		/*if (obj == null) {
-			Scanner in = new Scanner(System.in);
-			System.out.println("Would You Like to Run Cycle_by_Cycle? (1/0)");
-			obj = in.nextInt();
-		}
-		*/
-		obj = 0;
-		Integer pcIn;
-
-		/*
-		 *   Issue
-		 */
-		// if(CC % 2 == 1) {
-		// clockCycle++;
 		System.out.println("Cycle " + CC);
-		// }
-
-
+		Integer pcIn;
 		Instruction instr1;
+
 		Instruction[] deqIns = new Instruction[2];
 		for (int i = 0; i < 2; i++) {
 			deqIns[i] = null;
 		}
-
-
 		for (int i = 0; i < 2; i++) {
-			instr1 = instrQueue.peek();
-
+			instr1 = instructionQueue.peek();
 			if (instr1 != null) {
-				if (instr1.getPc() != pcPredict) {
-					if (prevInstr != null && prevInstr.getName().equals(Instruction.BEQ)) {
-						refillQueue(pcPredict);
-						mispredictionNum++;
-						System.out.println("misprediction " + instr1.getName());
+				if (instr1.getPc() != pcPrediction) {
+					if (prevInstruction != null && prevInstruction.getName().equals(Instruction.BEQ)) {
+						refillQueue(pcPrediction);
+						missPredictionCount++;
+						System.out.println("Miss Prediction " + instr1.getName());
 					}
 				}
-				if (rob.check() && rs.check(instr1)) {
-					//System.out.println("check " + instr1.getName());
+				if (rob.check() && reservationStation.check(instr1)) {
 					if (instr1.getName().equals(Instruction.LW) || instr1.getName().equals(Instruction.SW)) {
 						if (instr1.getName().equals(Instruction.LW) && loadBuffer.loadIsFree()) {
-							deqIns[i] = instrQueue.dequeue(instrsList, awaitingInstrIndex);
-							;
-
-							if (instrQueue.peek() != null && instrQueue.peek().getName().equals(Instruction.BEQ))
-								prevInstr = deqIns[i];
-
+							deqIns[i] = instructionQueue.dequeue(instructionsList, awaitingInstructionIndex);
+							if (instructionQueue.peek() != null && instructionQueue.peek().getName().equals(Instruction.BEQ))
+								prevInstruction = deqIns[i];
 							loadBufferLogic(deqIns[i]);
-							// rob.enqueue(deqIns[i]) ;
-							//fetch(deqIns[i]);
 						} else if (instr1.getName().equals(Instruction.SW) && loadBuffer.storeIsFree()) {
-							deqIns[i] = instrQueue.dequeue(instrsList, awaitingInstrIndex);
-
-							if (instrQueue.peek() != null && instrQueue.peek().getName().equals(Instruction.BEQ))
-								prevInstr = deqIns[i];
-
+							deqIns[i] = instructionQueue.dequeue(instructionsList, awaitingInstructionIndex);
+							if (instructionQueue.peek() != null && instructionQueue.peek().getName().equals(Instruction.BEQ))
+								prevInstruction = deqIns[i];
 							loadBufferLogic(deqIns[i]);
-							//rob.enqueue(deqIns[i]) ;
-							//fetch(deqIns[i]);
 						}
 						//else wait
 					} else {
-						//System.out.println("before fetch " + instrQueue.peek().getName());
-						deqIns[i] = instrQueue.dequeue(instrsList, awaitingInstrIndex);
-						if (instrQueue.peek() != null && instrQueue.peek().getName().equals(Instruction.BEQ))
-							prevInstr = deqIns[i];
+						//System.out.println("before fetch " + instructionQueue.peek().getName());
+						deqIns[i] = instructionQueue.dequeue(instructionsList, awaitingInstructionIndex);
+						if (instructionQueue.peek() != null && instructionQueue.peek().getName().equals(Instruction.BEQ))
+							prevInstruction = deqIns[i];
 
 						if (deqIns[i].getName().equals(Instruction.BEQ)) {
 							if (deqIns[i].getImm() < 0)
-								pcPredict = deqIns[i].getPc() + deqIns[i].getImm();
+								pcPrediction = deqIns[i].getPc() + deqIns[i].getImm();
 							else
-								pcPredict = deqIns[i].getPc() + 1;
+								pcPrediction = deqIns[i].getPc() + 1;
 						} else
-							pcPredict = deqIns[i].getPc() + 1;
-
-
+							pcPrediction = deqIns[i].getPc() + 1;
 						fetch(deqIns[i]);
 					}
 				}
@@ -171,15 +143,15 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 				// Branch
 				if (pcIn != null) {
 					rob.flush();
-					if (instrQueue.searchForPc(pcIn)) {
+					if (instructionQueue.searchForPc(pcIn)) {
 						refillQueue(pcIn);
                         /*
-                        while (!instrQueue.isEmpty() || !found) {
-                            branchedInstr = instrQueue.peek();
+                        while (!instructionQueue.isEmpty() || !found) {
+                            branchedInstr = instructionQueue.peek();
                             if (branchedInstr.getPc() == pcIn)
                                 found = true;
                             else
-                                instrQueue.dequeue();
+                                instructionQueue.dequeue();
                         }
                         */
 					} else {
@@ -189,34 +161,13 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 				}
 			}
 		}
-
-
-		if (obj == 1) {
-			Iterator it = rob.iterator();
-			Iterator<ReservationStationElement> itRs = rs.iterator();
-			it.forEachRemaining(new Consumer() {
-				@Override
-				public void accept(Object t) {
-					System.out.println("ROB: " + t.toString());
-				}
-			});
-			itRs.forEachRemaining(new Consumer<ReservationStationElement>() {
-				@Override
-				public void accept(ReservationStationElement reservation_station_element) {
-
-				}
-			});
-			memory.print();
-		}
-
-
 	}
 
 
 	private int fetch(Instruction deqIns) {
-		int indx = rob.enqueue(deqIns);
-		rs.add(deqIns, rob, indx, deqIns.getPc());
-		return indx;
+		int index = rob.enqueue(deqIns);
+		reservationStation.add(deqIns, rob, index, deqIns.getPc());
+		return index;
 	}
 
 	private void execute(Instruction deqIns, Instruction deqIns2) {
@@ -227,13 +178,12 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 				pc = deqIns.getPc();
 			if (deqIns2 != null)
 				pc2 = deqIns2.getPc();
-			rs.remove(format, rob, Main.CC, pc, pc2); //store start cycle in rs
-			rs.finish_execution(Main.CC, rob);
+			reservationStation.remove(format, rob, Main.CC, pc, pc2); //store start cycle in reservationStation
+			reservationStation.finish_execution(Main.CC, rob);
 		}
 	}
 
 	private void loadBufferLogic(Instruction deqIns) {
-
 		try {
 			loadBuffer.insertInstr(deqIns, fetch(deqIns));
 		} catch (Exception ex) {
@@ -242,10 +192,11 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 	}
 
 
+	//pc bug here
 	private void refillQueue(int index) {
-		instrQueue.dequeueAll();
-		for (int i = index; i < instrsList.size(); i++) {
-			instrQueue.enqueue(instrsList.get(i), i);
+		instructionQueue.clear();
+		for (int i = index; i < instructionsList.size(); i++) {
+			instructionQueue.enqueue(instructionsList.get(i), i);
 		}
 	}
 

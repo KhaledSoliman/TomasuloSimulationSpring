@@ -29,47 +29,49 @@ public class ReservationStation implements Iterable {
 		groups.put("MUL", new ReservationStationGroup(3));
 	}
 
-	void add(Instruction inst, ROB rob, int robIndex, int PC) {
+	void add(Instruction inst, Rob rob, int robIndex, int PC) {
 		ReservationStationElement[] x = groups.get(inst.getName()).getElements();
 		int y = empty_index(x);
 		x[y].operation = inst.getName();
 		x[y].busy = true;
-		x[y].Vj = null;
+		x[y].Vj = inst.getName().equals(Instruction.JMP) ? inst.getImm() : null;
 		x[y].Qj = null;
-		x[y].Vk = null;
+		x[y].Vk = inst.getName().equals(Instruction.ADDI) ? inst.getImm() : null;
 		x[y].Qk = null;
 		x[y].PC = PC;
 		x[y].robIndex = robIndex;
-		//SW LW JMP NO HERE
+		groups.get(inst.getName()).incrementCounter();
+		System.out.println(inst.getName() + " inst added!! ");
+		//SW LW JMP End HERE
+
+		//RegA
+		//JALR vj qj Missing
+		//RET vj qj Missing
 		int robIndex2 = rob.find_dest(inst.getRegB(), x[y].robIndex);
-		if (robIndex2 == -1) { //not found in ROB
+		if (robIndex2 == -1) { //not found in Rob
 			x[y].Vj = RegFile.read(inst.getRegB());
 			x[y].Qj = null;
-		} else if (rob.is_ready(robIndex2)) { //in ROB  // if rob entry is available not in queue
+		} else if (rob.is_ready(robIndex2)) { //in Rob  // if rob entry is available not in queue
 			x[y].Vj = rob.get_value(robIndex2);
 			x[y].Qj = null;
 		} else {
 			x[y].Qj = robIndex2;
 			x[y].Vj = null;
 		}
-		groups.get(inst.getName()).incrementCounter();
-		System.out.println(inst.getName() + " inst added!! ");
-		//JMP
-		JMP_JALR_RET[y].Vj = inst.getImm();
-		//RegA	//JALR vj qj
-		//RET vj qj
-		//RegAB  //BEQ
+
+		//RegAB
+		// BEQ
 		branch_imm[y] = inst.getImm();
-		//RegBC //ADD // Sub //NAND vj qj vk qk
-		// ADDI
-		ADD_SUB_ADDI[y].Vk = inst.getImm();
+
+		//RegBC //ADD // Sub //NAND // ADDI vj qj vk qk Missing
+
 		//Mul Nothing?
+
 		//Default
 		System.out.println(inst.getName() + " failed to add ");
-
 	}
 
-	void remove(String type, ROB rob, int CC, Integer PC, Integer PC2) {
+	void remove(String type, Rob rob, int CC, Integer PC, Integer PC2) {
 		//retrieves an inst with ready operands !!
 		int k = get_ready(type);
 		if (k != -1) {
@@ -99,7 +101,7 @@ public class ReservationStation implements Iterable {
 		return y != -1;
 	}
 
-	void finish_execution(int CC, ROB rob) {
+	void finish_execution(int CC, Rob rob) {
 		Integer result;
 		for (Map.Entry<String, ReservationStationGroup> element : groups.entrySet()) {
 			for (ReservationStationElement element2 : element.getValue().getElements()) {

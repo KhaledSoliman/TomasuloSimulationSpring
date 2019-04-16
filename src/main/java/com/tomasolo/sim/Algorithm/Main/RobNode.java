@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 @Data
-public class ROB_NODE {
+public class RobNode {
 	Integer index;
 	String type;
 	Integer dest;
@@ -14,9 +14,9 @@ public class ROB_NODE {
 	Integer value;
 	Integer jalr_value2;
 	@JsonIgnore
-	ROB_NODE next;
+	RobNode next;
 	@JsonIgnore
-	ROB_NODE previous;
+	RobNode previous;
 
 	public String toString() {
 		return index + ' ' + type + ' ' + dest + ' ' + ready + ' ' + value;

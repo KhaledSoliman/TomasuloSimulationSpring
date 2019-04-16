@@ -6,11 +6,11 @@ import java.util.ArrayList;
 
 @Data
 public class Response {
-	ArrayList<ROB_NODE> robResponse;
+	ArrayList<RobNode> robResponse;
 	ArrayList<String[]> rsResponses;
 	int[] rf;
 
-	public Response(ArrayList<ROB_NODE> robResponse, ArrayList<String[]> rsResponses, int[] rf) {
+	public Response(ArrayList<RobNode> robResponse, ArrayList<String[]> rsResponses, int[] rf) {
 		this.robResponse = robResponse;
 		this.rsResponses = rsResponses;
 		this.rf = rf;
@@ -24,11 +24,11 @@ public class Response {
 		this.rf = rf;
 	}
 
-	public ArrayList<ROB_NODE> getRobResponse() {
+	public ArrayList<RobNode> getRobResponse() {
 		return robResponse;
 	}
 
-	public void setRobResponse(ArrayList<ROB_NODE> robResponse) {
+	public void setRobResponse(ArrayList<RobNode> robResponse) {
 		this.robResponse = robResponse;
 	}
 

@@ -6,13 +6,12 @@ import com.tomasolo.sim.Algorithm.MemoryAndBuffer.Memory;
 import com.tomasolo.sim.Algorithm.MemoryAndBuffer.RegFile;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class ROB implements Iterable<ROB_NODE> {
-	private static ROB_NODE first;    // beginning of queue
-	private static ROB_NODE last;     // end of queue
+public class Rob implements Iterable<RobNode> {
+	private static RobNode first;    // beginning of queue
+	private static RobNode last;     // end of queue
 	private static int n;  // number of elements on queue
 	private static int last_index = -1;
 
@@ -20,7 +19,7 @@ public class ROB implements Iterable<ROB_NODE> {
 	/**
 	 * Initializes an empty queue.
 	 */
-	public ROB() {
+	public Rob() {
 		first = null;
 		last = null;
 		n = 0;
@@ -54,7 +53,7 @@ public class ROB implements Iterable<ROB_NODE> {
 	 * @return the item least recently added to this queue
 	 * @throws NoSuchElementException if this queue is empty
 	 */
-	public ROB_NODE peek() {
+	public RobNode peek() {
 		if (isEmpty()) throw new NoSuchElementException("Queue underflow");
 		return first;
 	}
@@ -64,8 +63,8 @@ public class ROB implements Iterable<ROB_NODE> {
 	 */
 	public int enqueue(Instruction inst) {
 		if (inst.getName().equals(Instruction.JMP) || inst.getName().equals(Instruction.BEQ) || inst.getName().equals(Instruction.RET)) {
-			ROB_NODE oldlast = last;
-			last = new ROB_NODE();
+			RobNode oldlast = last;
+			last = new RobNode();
 			last.dest = 100;
 			last.index = ++last_index;
 			last.previous = oldlast;
@@ -75,8 +74,8 @@ public class ROB implements Iterable<ROB_NODE> {
 			n++; //increment size
 			return last_index;
 		} else if (inst.getName().equals(Instruction.JALR)) {
-			ROB_NODE oldlast = last;
-			last = new ROB_NODE();
+			RobNode oldlast = last;
+			last = new RobNode();
 			last.dest = inst.getRegA();
 			last.index = ++last_index;
 			last.previous = oldlast;
@@ -86,8 +85,8 @@ public class ROB implements Iterable<ROB_NODE> {
 			n++; //increment size
 			return last_index;
 		} else if (inst.getName().equals(Instruction.SW)) {
-			ROB_NODE oldlast = last;
-			last = new ROB_NODE();
+			RobNode oldlast = last;
+			last = new RobNode();
 			last.dest = 101;
 			last.index = ++last_index;
 			last.previous = oldlast;
@@ -98,8 +97,8 @@ public class ROB implements Iterable<ROB_NODE> {
 			return last_index;
 		} else {
 
-			ROB_NODE oldlast = last;
-			last = new ROB_NODE();
+			RobNode oldlast = last;
+			last = new RobNode();
 			last.dest = inst.getRegA();
 			last.index = ++last_index;
 			last.previous = oldlast;
@@ -119,9 +118,9 @@ public class ROB implements Iterable<ROB_NODE> {
 	 * @return the item on this queue that was least recently added
 	 * @throws NoSuchElementException if this queue is empty
 	 */
-	public ROB_NODE dequeue() {
+	public RobNode dequeue() {
 		if (isEmpty()) throw new NoSuchElementException("Queue underflow");
-		ROB_NODE item = first;
+		RobNode item = first;
 		first = first.next;
 		n--;
 		if (isEmpty()) last = null;   // to avoid loitering
@@ -130,9 +129,9 @@ public class ROB implements Iterable<ROB_NODE> {
 
 	public int find_dest(int reg, int inst_indx) {
 		//System.out.println("REG" + reg);
-		ROB_NODE current = first;
+		RobNode current = first;
 		while (current != null) {
-			ROB_NODE item = current;
+			RobNode item = current;
 			current = current.next;
 			if (item.dest == reg && item.index != inst_indx) {
 				return item.index;
@@ -142,31 +141,31 @@ public class ROB implements Iterable<ROB_NODE> {
 	}
 
 	public boolean is_ready(int indx) {
-		ROB_NODE current = first;
+		RobNode current = first;
 		while (current != null) {
 			if (current.index == indx)
 				return current.ready;
 			current = current.next;
 		}
-		System.out.println("ROB Error");
+		System.out.println("Rob Error");
 		return false;
 
 	}
 
 	public Integer get_value(int indx) {
-		ROB_NODE current = first;
+		RobNode current = first;
 		while (current != null) {
 			if (current.index == indx)
 				return current.value;
 			current = current.next;
 		}
-		System.out.println("ROB ERROR");
+		System.out.println("Rob ERROR");
 		return null;
 	}
 
 	public boolean set_value(int indx, Integer value, Integer jalrvalue) {
 
-		ROB_NODE current = first;
+		RobNode current = first;
 		while (current != null) {
 			if (current.index == indx) {
 				if (current.type.equals(Instruction.JALR) || current.type.equals(Instruction.SW))
@@ -189,7 +188,7 @@ public class ROB implements Iterable<ROB_NODE> {
 	 */
 	public String toString() {
 		StringBuilder s = new StringBuilder();
-		ROB_NODE pointer = first;
+		RobNode pointer = first;
 		while (pointer != null) {
 			String item = pointer.type;
 			s.append(item);
@@ -238,9 +237,9 @@ public class ROB implements Iterable<ROB_NODE> {
 
 	}
 
-	public ArrayList<ROB_NODE> asList() {
-		ArrayList<ROB_NODE> list = new ArrayList<>();
-		ROB_NODE cur = first;
+	public ArrayList<RobNode> asList() {
+		ArrayList<RobNode> list = new ArrayList<>();
+		RobNode cur = first;
 		while (cur != null && cur.next != null) {
 			list.add(cur);
 			cur = cur.next;
@@ -248,11 +247,11 @@ public class ROB implements Iterable<ROB_NODE> {
 		return list;
 	}
 
-	public Iterator<ROB_NODE> iterator() {
+	public Iterator<RobNode> iterator() {
 		return new ListIterator(first);
 		/*
-		ِArrayList<ROB_NODE> list;
-		ROB_NODE cur = first;
+		ِArrayList<RobNode> list;
+		RobNode cur = first;
 		while(cur.next != null) {
 			list.add(cur);
 			cur = cur.next;

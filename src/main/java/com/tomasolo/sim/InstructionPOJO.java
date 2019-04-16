@@ -12,6 +12,14 @@ public class InstructionPOJO {
 		return operands;
 	}
 
+	public Integer[] getOperandsAsIntegers() {
+		Integer[] operandsAsIntegerArray = new Integer[operands.length];
+		for (int i = 0; i < operands.length; i++) {
+			operandsAsIntegerArray[i] = Integer.parseInt(operands[i]);
+		}
+		return operandsAsIntegerArray;
+	}
+
 	public void setOperands(String[] operands) {
 		this.operands = operands;
 	}

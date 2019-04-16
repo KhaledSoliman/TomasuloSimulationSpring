@@ -1,7 +1,6 @@
 package com.tomasolo.sim.Algorithm.Main;
 
 import com.tomasolo.sim.Algorithm.Instruction.Instruction;
-import com.tomasolo.sim.Algorithm.Instruction.InstructionQueue;
 
 import java.util.ArrayList;
 

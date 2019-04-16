@@ -4,10 +4,10 @@ package com.tomasolo.sim.Algorithm.Main;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-class ListIterator implements Iterator<ROB_NODE> {
-        private ROB_NODE current;
+class ListIterator implements Iterator<RobNode> {
+        private RobNode current;
 
-        public ListIterator(ROB_NODE first) {
+        public ListIterator(RobNode first) {
             current = first;
         }
 
@@ -15,9 +15,9 @@ class ListIterator implements Iterator<ROB_NODE> {
         
         public void remove()      { throw new UnsupportedOperationException();  }
 
-        public ROB_NODE next() {
+        public RobNode next() {
             if (!hasNext()) throw new NoSuchElementException();
-            ROB_NODE item = current;
+            RobNode item = current;
             current = current.next; 
             return item;
         }

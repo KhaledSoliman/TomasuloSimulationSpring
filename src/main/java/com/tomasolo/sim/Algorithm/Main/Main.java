@@ -25,7 +25,7 @@ public class Main {
 	public static ArrayList<Response> main(@RequestBody POJO args) throws InterruptedException {
 		clkH = new ClkLoadHandler();
 		controller = new Controller(convertToInstructions(args.getInstructions()));
-		clkInterface = (ClkInterface) controller;
+		clkInterface = controller;
 		updateCCEverySec();
 
 		Thread.sleep(4000);
@@ -40,14 +40,14 @@ public class Main {
 			@Override
 			public void run() {
 				Main.response.add(buildRes());
-				if (controller.rob.isEmpty() && controller.instrQueue.isEmpty()) {
+				if (controller.rob.isEmpty() && controller.instructionQueue.isEmpty()) {
 					timer.cancel();
-					double ipc = (float) controller.rs.getNumExecutedInstructions() / CC;
-					if (controller.rs.getNumBranchInstrs() != 0) {
-						float mispredictionRate = (float) (controller.mispredictionNum / controller.rs.getNumBranchInstrs()) * 100;
-						System.out.println("IPC = " + ipc + " \nMisprediction Rate = " + mispredictionRate);
+					double ipc = (float) controller.reservationStation.getNumExecutedInstructions() / CC;
+					if (controller.reservationStation.getNumBranchInstrs() != 0) {
+						float missPredictionRate = (float) (controller.missPredictionCount / controller.reservationStation.getNumBranchInstrs()) * 100;
+						System.out.println("IPC = " + ipc + " \nMiss Prediction Rate = " + missPredictionRate);
 					} else {
-						System.out.println("IPC = " + ipc + " \nMisprediction Rate = No Branch Instructions were executed");
+						System.out.println("IPC = " + ipc + " \nMiss Prediction Rate = No Branch Instructions were executed");
 					}
 				} else {
 					clkInterface.didUpdate(CC);
@@ -72,102 +72,21 @@ public class Main {
 	}
 
 	private static Response buildRes() {
-
-		ArrayList<ROB_NODE> robResponse = controller.rob.asList();
-		/*
-			Iterator iteratorROB = controller.rob.iterator();
-			iteratorROB.forEachRemaining(new Consumer<ROB_NODE>() {
-				@Override
-				public void accept(Object o) {
-					robResponse.add(o.toString());
-				}
-			});
-		*/
+		ArrayList<RobNode> robResponse = controller.rob.asList();
 		ArrayList<String[]> rsResponse = new ArrayList<>();
-		Iterator<ReservationStationElement> iteratorRS = controller.rs.iterator();
-		iteratorRS.forEachRemaining(new Consumer<ReservationStationElement>() {
-			@Override
-			public void accept(ReservationStationElement reservation_station_element) {
-				rsResponse.add(reservation_station_element.toArray());
-			}
-		});
-
 		return new Response(robResponse, rsResponse, RegFile.getRf());
 	}
 
 	private static ArrayList<Instruction> convertToInstructions(InstructionPOJO[] pojos) {
 		ArrayList<Instruction> list = new ArrayList<>();
-		for (InstructionPOJO i : pojos) {
-			if (i.getName().equals(Instruction.ADD) || i.getName().equals(Instruction.SUB)
-					|| i.getName().equals(Instruction.MUL) || i.getName().equals(Instruction.NAND)) {
-				try {
-					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_ARITHMETIC,
-							Integer.parseInt(i.getOperands()[0]),
-							Integer.parseInt(i.getOperands()[1]),
-							Integer.parseInt(i.getOperands()[2]));
-					list.add(instruction);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			} else if (i.getName().equals(Instruction.ADDI)) {
-				try {
-					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_ARITHMETIC_IMM,
-							Integer.parseInt(i.getOperands()[0]),
-							Integer.parseInt(i.getOperands()[1]),
-							Integer.parseInt(i.getOperands()[2]));
-					list.add(instruction);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			} else if (i.getName().equals(Instruction.BEQ)) {
-				try {
-					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_CONDITIONAL_BRANCH,
-							Integer.parseInt(i.getOperands()[0]),
-							Integer.parseInt(i.getOperands()[1]),
-							Integer.parseInt(i.getOperands()[2]));
-					list.add(instruction);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			} else if (i.getName().equals(Instruction.JALR)) {
-				try {
-					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_JALR,
-							Integer.parseInt(i.getOperands()[0]),
-							Integer.parseInt(i.getOperands()[1]));
-					list.add(instruction);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			} else if (i.getName().equals(Instruction.JMP)) {
-				try {
-					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_UNCONDITIONAL_BRANCH,
-							Integer.parseInt(i.getOperands()[0]));
-					list.add(instruction);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			} else if (i.getName().equals(Instruction.RET)) {
-				try {
-					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_RET,
-							Integer.parseInt(i.getOperands()[0]));
-					list.add(instruction);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			} else if (i.getName().equals(Instruction.LW) || i.getName().equals(Instruction.SW)) {
-				try {
-					Instruction instruction = new Instruction(i.getName(), Instruction.FORMAT_LW_SW,
-							Integer.parseInt(i.getOperands()[0]),
-							Integer.parseInt(i.getOperands()[1]),
-							Integer.parseInt(i.getOperands()[2]));
-					list.add(instruction);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+		for (InstructionPOJO instructionPOJO : pojos) {
+			try {
+				Instruction instruction = new Instruction(instructionPOJO.getName(), instructionPOJO.getOperandsAsIntegers());
+				list.add(instruction);
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
-
 		return list;
 	}
-
 }
