@@ -6,40 +6,34 @@ import com.tomasolo.sim.Algorithm.Main.Controller;
 
 
 public class LoadBuffer {
-
-	private int load_size;
-	private int store_size;
 	private final int LOAD_CAPACITY = 2;
 	private final int STORE_CAPACITY = 2;
 	private final int MAX_CAPACITY = LOAD_CAPACITY + STORE_CAPACITY;
 
-	private int[] buffer;   // stores the addresses
+	private int load_size;
+	private int store_size;
+	private int[] buffer;
 	private MemoryInterface memInterface;
 	private NextCCInterface clkInterface;
 
 	public LoadBuffer(Controller controller) {
-
 		buffer = new int[MAX_CAPACITY];
 		for (int i = 0; i < MAX_CAPACITY; i++) {
 			buffer[i] = 0;
 		}
 		load_size = 0;
 		store_size = 0;
-		memInterface = (MemoryInterface) controller;
+		memInterface = controller;
 		clkInterface = Main.clkH;
 	}
 
 
-	/*
-	 *   Inserts Instruction in Load Buffer and returns Loaded Data from Memory
-	 * */
-	public boolean insertInstr(Instruction instr, int rob_index) throws Exception {
-		if (!freeSlot(instr)) {
+	public boolean insertInstruction(Instruction instruction, int robIndex) throws Exception {
+		if (!freeSlot(instruction)) {
 			return false;
 		} else {
 			int index;
-
-			if (instr.getName().equals(Instruction.LW)) {
+			if (instruction.getName().equals(Instruction.LW)) {
 				index = getFreeLoadSlot(load_size);
 				load_size++;
 			} else {
@@ -52,15 +46,14 @@ public class LoadBuffer {
 			// CC 1: Issuing
 			// Starting Computing Address:
 			// A = Imm
-
-			buffer[index] = instr.getImm();
+			buffer[index] = instruction.getImmediate();
 			System.out.println("CC: " + Main.CC + " Load Buffer: entry #" + index + ", Address: " + buffer[index]);
 
 			// CC 2: A = Imm + Regs[Rs2]
 			nextCycle(Main.CC);
 			System.out.println("Expected : 2, Found: " + Main.CC);
 			try {
-				buffer[index] += RegFile.read(instr.getRegB());
+				buffer[index] += RegisterFile.read(instruction.getRegB());
 			} catch (Exception e) {
 				e.printStackTrace();
 				throw new Exception("Cannot read from Register File");
@@ -72,18 +65,17 @@ public class LoadBuffer {
 			// CC 3: Writing
 			nextCycle(Main.CC);
 			// Case Load
-			if (instr.getName().equals(Instruction.LW)) {
+			if (instruction.getName().equals(Instruction.LW)) {
 				// Free the slot
 				load_size--;
 				// Load from Memory
-				int loadedValue = memInterface.loadFromMem(buffer[index]);
+				int loadedValue = memInterface.load(buffer[index]);
 				// TODO:: Change the -1 to be another error value
 				if (loadedValue == -1)
 					return false;
 					// Callback once done
 				else {
-					//System.out.println ("HNNA!!" + rob_index + " "+loadedValue );
-					return memInterface.memoryLoadDone(rob_index, loadedValue);
+					return memInterface.memoryLoadDone(robIndex, loadedValue);
 				}
 			}
 			// Case Store
@@ -91,25 +83,22 @@ public class LoadBuffer {
 				// Free the slot
 				store_size--;
 				// Store in Memory
-				return memInterface.storeInMem(rob_index, buffer[index], instr.getRegA());
+				return memInterface.store(robIndex, buffer[index], instruction.getRegA());
 			}
 		}
 	}
 
-	private int getFreeStoreSlot(int stSize) {
-		return stSize + 2;
+	private int getFreeStoreSlot(int storeSize) {
+		return storeSize + 2;
 	}
 
-	private int getFreeLoadSlot(int ldSize) {
-		return ldSize;
+	private int getFreeLoadSlot(int loadSize) {
+		return loadSize;
 	}
 
-	private boolean freeSlot(Instruction instr) {
-		if ((instr.getName().equals(Instruction.LW) && load_size >= LOAD_CAPACITY) ||
-				(instr.getName().equals(Instruction.SW) && store_size >= STORE_CAPACITY))
-			return false;
-		else
-			return true;
+	private boolean freeSlot(Instruction instruction) {
+		return (instruction.getName().equals(Instruction.LW) && load_size < LOAD_CAPACITY) ||
+				(instruction.getName().equals(Instruction.SW) && store_size < STORE_CAPACITY);
 	}
 
 	public boolean loadIsFree() {
@@ -132,13 +121,11 @@ public class LoadBuffer {
 	}
 
 	public interface MemoryInterface {
-		// Load Interface
-		int loadFromMem(int address);
+		int load(int address);
+
+		boolean store(int rob_index, int address, int data);
 
 		boolean memoryLoadDone(int rob_index, int data);
-
-		// Store Interface
-		boolean storeInMem(int rob_index, int address, int data);
 	}
 
 	public interface NextCCInterface {

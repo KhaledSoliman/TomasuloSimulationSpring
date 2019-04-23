@@ -1,15 +1,12 @@
 package com.tomasolo.sim.Algorithm.Main;
 
 
-import com.tomasolo.sim.Algorithm.Instruction.Instruction;
 import com.tomasolo.sim.Algorithm.MemoryAndBuffer.LoadBuffer;
-import com.tomasolo.sim.Algorithm.MemoryAndBuffer.RegFile;
-import com.tomasolo.sim.InstructionPOJO;
+import com.tomasolo.sim.Algorithm.MemoryAndBuffer.RegisterFile;
 import com.tomasolo.sim.POJO;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 @RestController
 public class Main {
@@ -24,7 +21,7 @@ public class Main {
 	@ResponseBody
 	public static ArrayList<Response> main(@RequestBody POJO args) throws InterruptedException {
 		clkH = new ClkLoadHandler();
-		controller = new Controller(convertToInstructions(args.getInstructions()));
+		controller = new Controller(new ArrayList<>(Arrays.asList(args.getInstructions())));
 		clkInterface = controller;
 		updateCCEverySec();
 
@@ -42,9 +39,9 @@ public class Main {
 				Main.response.add(buildRes());
 				if (controller.rob.isEmpty() && controller.instructionQueue.isEmpty()) {
 					timer.cancel();
-					double ipc = (float) controller.reservationStation.getNumExecutedInstructions() / CC;
-					if (controller.reservationStation.getNumBranchInstrs() != 0) {
-						float missPredictionRate = (float) (controller.missPredictionCount / controller.reservationStation.getNumBranchInstrs()) * 100;
+					double ipc = (float) controller.reservationStation.countExecutedInstructions() / CC;
+					if (controller.reservationStation.countBranchInstructions() != 0) {
+						float missPredictionRate = (float) (controller.missPredictionCount / controller.reservationStation.countBranchInstructions()) * 100;
 						System.out.println("IPC = " + ipc + " \nMiss Prediction Rate = " + missPredictionRate);
 					} else {
 						System.out.println("IPC = " + ipc + " \nMiss Prediction Rate = No Branch Instructions were executed");
@@ -52,7 +49,7 @@ public class Main {
 				} else {
 					clkInterface.didUpdate(CC);
 					CC++;
-					RegFile.print();
+					RegisterFile.print();
 				}
 			}
 		}, 10, 100);
@@ -74,19 +71,6 @@ public class Main {
 	private static Response buildRes() {
 		ArrayList<RobNode> robResponse = controller.rob.asList();
 		ArrayList<String[]> rsResponse = new ArrayList<>();
-		return new Response(robResponse, rsResponse, RegFile.getRf());
-	}
-
-	private static ArrayList<Instruction> convertToInstructions(InstructionPOJO[] pojos) {
-		ArrayList<Instruction> list = new ArrayList<>();
-		for (InstructionPOJO instructionPOJO : pojos) {
-			try {
-				Instruction instruction = new Instruction(instructionPOJO.getName(), instructionPOJO.getOperandsAsIntegers());
-				list.add(instruction);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		return list;
+		return new Response(robResponse, rsResponse, RegisterFile.getRegisterFile());
 	}
 }

@@ -2,6 +2,8 @@ package com.tomasolo.sim.Algorithm.Main;
 
 import com.tomasolo.sim.Algorithm.Instruction.*;
 import com.tomasolo.sim.Algorithm.MemoryAndBuffer.*;
+import com.tomasolo.sim.Algorithm.ReservationStation.ReservationStation;
+import com.tomasolo.sim.Algorithm.Rob.Rob;
 
 import java.util.ArrayList;
 
@@ -29,9 +31,22 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 		memory = new Memory();
 		rob = new Rob();
 		reservationStation = new ReservationStation();
-		instructionsList = Utils.fillArray(instructions);
-		instructionQueue = new InstructionQueue();
+		reservationStation.addGroup(Instruction.LW, 2);
+		reservationStation.addGroup(Instruction.SW, 2);
+		reservationStation.addGroup(Instruction.BEQ, 2);
+		reservationStation.addGroup(Instruction.NAND, 1);
+		reservationStation.addGroup(Instruction.MUL, 3);
+		reservationStation.addGroup(new String[]{Instruction.JMP, Instruction.JALR, Instruction.JALR}, 3);
+		reservationStation.addGroup(new String[]{Instruction.ADD, Instruction.SUB, Instruction.ADDI}, 3);
 
+		instructionsList = new ArrayList<>();
+		for (int i = 0; i < instructions.size(); i++) {
+			Instruction instr = instructions.get(i);
+			instr.setPc(i);
+			instructionsList.add(instr);
+		}
+
+		instructionQueue = new InstructionQueue();
 		for (int i = 0; i < instructionsList.size(); i++) {
 			boolean enqueued = instructionQueue.enqueue(instructionsList.get(i));
 			if (!enqueued) {
@@ -39,6 +54,7 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 				break;
 			}
 		}
+
 		pcPrediction = 0;
 		prevInstruction = null;
 		missPredictionCount = 0;
@@ -46,7 +62,7 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 
 
 	@Override
-	public int loadFromMem(int address) {
+	public int load(int address) {
 		try {
 			return memory.read(address);
 		} catch (Exception e) {
@@ -58,13 +74,13 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 	@Override
 	public boolean memoryLoadDone(int robIndex, int data) {
 		reservationStation.update(robIndex, data);
-		return rob.set_value(robIndex, data, null);
+		return rob.setValue(robIndex, data, null);
 	}
 
 	@Override
-	public boolean storeInMem(int robIndex, int address, int data) {
+	public boolean store(int robIndex, int address, int data) {
 		try {
-			return rob.set_value(robIndex, data, address);
+			return rob.setValue(robIndex, data, address);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
@@ -73,6 +89,7 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 
 	/**
 	 * equivalent to always @ posedge clk in verilog
+	 *
 	 * @param CC current clock cycle
 	 */
 	@Override
@@ -95,7 +112,7 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 						System.out.println("Miss Prediction " + instr1.getName());
 					}
 				}
-				if (rob.check() && reservationStation.check(instr1)) {
+				if (rob.isNotFull() && reservationStation.isNotFull(instr1)) {
 					if (instr1.getName().equals(Instruction.LW) || instr1.getName().equals(Instruction.SW)) {
 						if (instr1.getName().equals(Instruction.LW) && loadBuffer.loadIsFree()) {
 							deqIns[i] = instructionQueue.dequeue(instructionsList, awaitingInstructionIndex);
@@ -116,8 +133,8 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 							prevInstruction = deqIns[i];
 
 						if (deqIns[i].getName().equals(Instruction.BEQ)) {
-							if (deqIns[i].getImm() < 0)
-								pcPrediction = deqIns[i].getPc() + deqIns[i].getImm();
+							if (deqIns[i].getImmediate() < 0)
+								pcPrediction = deqIns[i].getPc() + deqIns[i].getImmediate();
 							else
 								pcPrediction = deqIns[i].getPc() + 1;
 						} else
@@ -142,7 +159,7 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 
 				// Branch
 				if (pcIn != null) {
-					rob.flush();
+					rob.clear();
 					if (instructionQueue.searchForPc(pcIn)) {
 						refillQueue(pcIn);
                         /*
@@ -155,7 +172,7 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
                         }
                         */
 					} else {
-						//rob.flush();
+						//rob.clear();
 						refillQueue(pcIn);
 					}
 				}
@@ -165,7 +182,7 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 
 
 	private int fetch(Instruction deqIns) {
-		int index = rob.enqueue(deqIns);
+		int index = rob.add(deqIns);
 		reservationStation.add(deqIns, rob, index, deqIns.getPc());
 		return index;
 	}
@@ -185,14 +202,12 @@ public class Controller implements LoadBuffer.MemoryInterface, Main.ClkInterface
 
 	private void loadBufferLogic(Instruction deqIns) {
 		try {
-			loadBuffer.insertInstr(deqIns, fetch(deqIns));
+			loadBuffer.insertInstruction(deqIns, fetch(deqIns));
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 	}
-
-
-	//pc bug here
+	
 	private void refillQueue(int index) {
 		instructionQueue.clear();
 		for (int i = index; i < instructionsList.size(); i++) {

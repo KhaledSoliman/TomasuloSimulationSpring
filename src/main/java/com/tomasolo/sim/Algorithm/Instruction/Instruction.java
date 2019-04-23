@@ -1,12 +1,14 @@
 package com.tomasolo.sim.Algorithm.Instruction;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
 public class Instruction {
 	private String name, format;
 	private int regA, regB, regC;
-	private int imm;
+	private int immediate;
 	private int pc;
 
 	// All Formats
@@ -32,15 +34,17 @@ public class Instruction {
 			NAND = "NAND",
 			MUL = "MUL";
 
-	public Instruction(String name, Integer[] operands) throws Exception {
+	@JsonCreator
+	public Instruction(@JsonProperty(value = "name") String name, @JsonProperty(value = "operands") String[] operandsAsString) throws Exception {
 		this.name = name;
+		Integer[] operands = this.getOperandsAsIntegers(operandsAsString);
 		switch (name) {
 			case LW:
 			case SW:
 				this.format = FORMAT_LW_SW;
 				this.regA = operands[0];
 				this.regB = operands[1];
-				this.imm = operands[2];
+				this.immediate = operands[2];
 				break;
 			case ADD:
 			case SUB:
@@ -55,13 +59,13 @@ public class Instruction {
 				this.format = FORMAT_ARITHMETIC_IMM;
 				this.regA = operands[0];
 				this.regB = operands[1];
-				this.imm = operands[2];
+				this.immediate = operands[2];
 				break;
 			case BEQ:
 				this.format = FORMAT_CONDITIONAL_BRANCH;
 				this.regA = operands[0];
 				this.regB = operands[1];
-				this.imm = operands[2];
+				this.immediate = operands[2];
 				break;
 			case JALR:
 				this.name = name;
@@ -71,7 +75,7 @@ public class Instruction {
 				break;
 			case JMP:
 				this.format = FORMAT_UNCONDITIONAL_BRANCH;
-				this.imm = operands[0];
+				this.immediate = operands[0];
 				break;
 			case RET:
 				this.format = FORMAT_RET;
@@ -102,8 +106,8 @@ public class Instruction {
 		return regC;
 	}
 
-	public int getImm() {
-		return imm;
+	public int getImmediate() {
+		return immediate;
 	}
 
 	public int getPc() {
@@ -112,5 +116,13 @@ public class Instruction {
 
 	public void setPc(int pc) {
 		this.pc = pc;
+	}
+
+	private Integer[] getOperandsAsIntegers(String[] operands) {
+		Integer[] operandsAsIntegerArray = new Integer[operands.length];
+		for (int i = 0; i < operands.length; i++) {
+			operandsAsIntegerArray[i] = Integer.parseInt(operands[i]);
+		}
+		return operandsAsIntegerArray;
 	}
 }

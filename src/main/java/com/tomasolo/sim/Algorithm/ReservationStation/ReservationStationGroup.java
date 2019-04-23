@@ -1,4 +1,4 @@
-package com.tomasolo.sim.Algorithm.Main;
+package com.tomasolo.sim.Algorithm.ReservationStation;
 
 public class ReservationStationGroup {
 	private ReservationStationElement[] elements;
